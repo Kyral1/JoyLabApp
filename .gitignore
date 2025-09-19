@@ -65,6 +65,7 @@ yarn-error.log
 
 # testing
 /coverage
+/.nyc_output
 
 # Yarn
 .yarn/*
@@ -73,3 +74,42 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# React Native bundler cache
+.expo/
+.expo-shared/
+.expo-dev/
+.expo-packager-cache/
+web-build/
+dist/
+*.bundle
+*.map
+
+# Android build artifacts
+/android/app/release
+/android/app/debug
+/android/app/profile
+
+# Captures & traces
+captures/
+*.hprof
+
+# Gradle daemon
+.gradle/
+
+# iOS build and workspace
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace
+*.xcuserdata/
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+*.log
+*.log.*
+
