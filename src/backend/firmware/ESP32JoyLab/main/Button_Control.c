@@ -21,7 +21,8 @@ void button_init_all(void) {
 }
 
 //checks if button is pressed
-int button_is_pressed(int id){
-    int pin = (id == 1) ? BUTTON1_PIN : (id == 2) ? BUTTON2_PIN : BUTTON3_PIN; //ternary op.
-    return gpio_get_level(pin) == 0;
+bool button_is_pressed(int index) {
+    if (index < 0 || index >= NUM_BUTTONS) return false;
+    int level = gpio_get_level(button_pins[index]);
+    return (level == 0);  // pressed = LOW
 }
