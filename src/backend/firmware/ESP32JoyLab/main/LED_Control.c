@@ -1,32 +1,51 @@
 //pulls in ESP-IDF’s GPIO driver library
-#include "driver/gpio.h"
 #include "led_control.h"
+#include "esp_log.h"
+#include "led_strip.h"
 
-//LED Pins (change when ESP is configured)
-#define LED1_PIN 2
-#define LED2_PIN 4
-#define LED3_PIN 5
+//Log Tag - any messages from this file will have the tag below
+static const char *TAG = "LED_CONTROL";
+
+//object representing LED strip
+static led_strip_handle_t led_strip;
 
 //prepares all LEDs for use (reset + set as outputs)
 void led_init(void){
-    gpio_reset_pin(LED1_PIN);
-    gpio_set_direction(LED1_PIN, GPIO_MODE_OUTPUT);
+    //dont have to include logs -- good for debugging
+    ESP_LOGI(TAG, "Initializing DotStar LED strip");
 
-    gpio_reset_pin(LED2_PIN);
-    gpio_set_direction(LED2_PIN, GPIO_MODE_OUTPUT);
+    led_strip_config_t strip_config = { //describes data strip
+        .strip_gpio_num = 5 //CHANGE later
+        .max_leds = 4 //# in strip
+    };
 
-    gpio_reset_pin(LED3_PIN);
-    gpio_set_direction(LED3_PIN, GPIO_MODE_OUTPUT);
+    led_strip_spi_config_t spi_config = { //using spi
+        .spi_bus = SPI2_HOST,
+        .flags.with_dma = true,
+    };
+
+    //creating LED strip object and assigning it to LED_strip
+    ESP_ERROR_CHECK(led_strip_new_spi_device(&strip_config, &spi_config, &led_strip));
+    led_strip_clear(led_strip); //turns all LEDs OFF to start
 }
 
-//LED ON
-void led_on(int id){
-    int pin = (id == 1) ? LED1_PIN : (id == 2) ? LED2_PIN : LED3_PIN; //ternary op.
-    gpio_set_level(pin, 1) //set pin to high
+//LED at position INDEX Color (turn ON)
+void led_set_color_brightness(int index, uint8_t r, uint8_t g, uint8_t b, float brightness){
+    //scale each RGB to correct brightness
+    uint8_t r_scaled = (uint8_t)(r * brightness);
+    uint8_t g_scaled = (uint8_t)(g * brightness);
+    uint8_t b_scaled = (uint8_t)(b * brightness);
+
+    ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, index, r_scaled, g_scaled, b_scaled));
+    ESP_ERROR_CHECK(led_strip_refresh(led_strip));
 }
 
-//LED OFF
-void led_off(int id){
-    int pin = (id == 1) ? LED1_PIN : (id == 2) ? LED2_PIN : LED3_PIN; //ternary op.
-    gpio_set_level(pin, 0) //set pin to low
+//Single LED OFF
+void led_clear_one(int index){
+    ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, index, 0, 0, 0));
+    ESP_ERROR_CHECK(led_strip_refresh(led_strip)); //send LED values over the wire
+}
+//ALL LEDs OFF
+void led_clear(void) {
+    ESP_ERROR_CHECK(led_strip_clear(led_strip));
 }
