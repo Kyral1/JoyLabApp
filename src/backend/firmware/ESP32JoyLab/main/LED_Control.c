@@ -1,5 +1,5 @@
 //pulls in ESP-IDF’s GPIO driver library
-#include "led_control.h"
+#include "LED_Control.h"
 #include "esp_log.h"
 #include "led_strip.h"
 
