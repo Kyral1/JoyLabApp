@@ -1,11 +1,9 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Button } from "react-native";
+import SettingsScreen from "./src/frontend/screens/SettingsScreen";
 
-function SettingsScreen() {
-  return <View style={styles.center}><Text>Settings</Text></View>;
-}
 function GameModesScreen() {
   return <View style={styles.center}><Text>Game Modes</Text></View>;
 }

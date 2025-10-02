@@ -1,18 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet, Button } from "react-native";
 
-export default function GameModesScreen() {
+export default function SettingsScreen() {
   return (
-    <View style={styles.container}>
-      <Text>Game Modes will go here!</Text>
+    <View style={styles.center}>
+      <Text>Settings</Text>
+      <Button title="Click Me" onPress={() => alert("Button pressed!")} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
