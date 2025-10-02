@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function GameModesScreen() {
   return (
     <View style={styles.container}>
-      <Text>Game Modes will go here!</Text>
+      <Text>Homepage</Text>
     </View>
   );
 }

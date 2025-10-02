@@ -7,8 +7,7 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest",
-    "dev-android": "emulator -avd Pixel_8 & react-native start & react-native run-android"
+    "test": "jest"
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.81.4",
