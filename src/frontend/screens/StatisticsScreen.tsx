@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function GameModesScreen() {
+export default function StatisticsScreen() {
   return (
     <View style={styles.container}>
-      <Text>Game Modes will go here!</Text>
+      <Text>Stats test 2</Text>
     </View>
   );
 }
