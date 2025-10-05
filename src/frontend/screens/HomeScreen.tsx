@@ -22,18 +22,6 @@ export default function HomeScreen() {
     }
   };
 
-  // Send toggle command
-  const toggleLED = async () => {
-    try {
-      if (!connected) return Alert.alert('BLE', 'Not connected yet');
-      // Frame: [Cat=0x01][Cmd=0x02][Len=1][Payload=99]
-      await bleService.sendControlFrame([0x01, 0x02, 0x01, 0x63]);
-      Alert.alert('LED', 'Toggle command sent ✅');
-    } catch (e: any) {
-      Alert.alert('Error', e?.message ?? String(e));
-    }
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>JoyLab Controller!</Text>
@@ -51,12 +39,6 @@ export default function HomeScreen() {
       />
 
       <View style={{ height: 20 }} />
-
-      <Button
-        title="Toggle LEDs"
-        onPress={toggleLED}
-        disabled={!connected}
-      />
     </View>
   );
 }

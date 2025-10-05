@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-console.log("📊 [TOP] StatisticsScreen file loaded");
+import { Buffer } from 'buffer';
+import { bleService } from '../services/BLEService'; 
 
 export default function StatisticsScreen() {
   console.log("📊 StatisticsScreen loaded!");
