@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Button, Alert } from 'react-native';
 import { bleService } from '../services/BLEService';
 
 export default function HomeScreen() {
+  console.log("🎮 HomeScreen loaded!");
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
@@ -35,7 +36,7 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>JoyLab Controller</Text>
+      <Text style={styles.title}>JoyLab Controller!</Text>
 
       <Button
         title={

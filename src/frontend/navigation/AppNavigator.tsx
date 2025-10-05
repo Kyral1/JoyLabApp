@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import GameModesScreen from '../screens/GameModes';
+import GameModesScreen from '../screens/GameModesScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import StatisticsScreen from '../screens/StatisticsScreen';
 import HomeScreen from '../screens/HomeScreen';

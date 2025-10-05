@@ -5,13 +5,8 @@ import { View, Text, StyleSheet, Button } from "react-native";
 
 import HomeScreen from "./src/frontend/screens/HomeScreen";
 import SettingsScreen from "./src/frontend/screens/SettingsScreen";
-
-function GameModesScreen() {
-  return <View style={styles.center}><Text>Game Modes</Text></View>;
-}
-function StatisticsScreen() {
-  return <View style={styles.center}><Text>Statistics</Text></View>;
-}
+import StatisticsScreen from "./src/frontend/screens/StatisticsScreen";
+import GameModesScreen from "./src/frontend/screens/GameModesScreen";
 
 const Tab = createBottomTabNavigator();
 
