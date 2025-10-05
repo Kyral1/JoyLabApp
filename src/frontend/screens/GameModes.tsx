@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function GameModes() {
   return (
     <View style={styles.container}>
-      <Text>Modes Page</Text>
+      <Text>Modes Page!</Text>
     </View>
   );
 }
