@@ -7,7 +7,7 @@ import HomeScreen from "./src/frontend/screens/HomeScreen";
 import SettingsScreen from "./src/frontend/screens/SettingsScreen";
 import StatisticsScreen from "./src/frontend/screens/StatisticsScreen";
 import GameModesScreen from "./src/frontend/screens/GameModesScreen";
-
+import TestScreen from "./src/frontend/screens/TestScreen";
 const Tab = createBottomTabNavigator();
 
 
@@ -71,6 +71,12 @@ export default function App() {
             ),
           }}
         />
+
+        <Tab.Screen
+          name="Test Screen"
+          component={TestScreen}
+        />
+
       </Tab.Navigator>
     </NavigationContainer>
   );

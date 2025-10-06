@@ -90,7 +90,12 @@ import { bleService } from '../services/BLEService';
         <Slider
           style={styles.slider}
           value={brightness}
-          onValueChange={setBrightness}
+          onValueChange={(val) => {
+            setBrightness(val);
+            const scaled = Math.round(val * 100); // 0–100 brightness
+            const frame = [0x01, 0x03, 0x01, scaled]; // CAT=1, CMD=3
+            bleService.sendControlFrame(frame);
+          }}
           minimumValue={0}
           maximumValue={1}
           minimumTrackTintColor="#4A7FFB"

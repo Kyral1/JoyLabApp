@@ -38,6 +38,7 @@ typedef enum {
 enum{
     CMD_LED_SET_PIXEL = 0x01, //payload: 
     CMD_LED_SET_MODE = 0x02,  //payload: modeID
+    CMD_LED_SET_BRIGHT = 0x03 //payload: brightness 0-100
 }
 
 //commands - AUDIO
@@ -228,6 +229,12 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_LED_SET_MODE:
           if (len >= 1) cmd_led_set_mode(pl[0]);
           break;
+        case CMD_LED_SET_BRIGHT:
+          if (len>=1){
+            float brightness = (float)pl[0] / 100.0f;
+            ensure_led_ready();
+            led_set_global_brightness(brightness);
+          } break;
         default: break;
       }
       break;

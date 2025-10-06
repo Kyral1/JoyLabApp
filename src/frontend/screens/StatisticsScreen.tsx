@@ -7,7 +7,7 @@ export default function StatisticsScreen() {
   console.log("📊 StatisticsScreen loaded!");
   return (
     <View style={styles.container}>
-      <Text>Stats</Text>
+      <Text>Statss</Text>
     </View>
   );
 }

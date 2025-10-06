@@ -49,3 +49,17 @@ void led_clear_one(int index){
 void led_clear(void) {
     ESP_ERROR_CHECK(led_strip_clear(led_strip));
 }
+
+//LED All Brightness
+void led_set_global_brightness(float brightness) {
+    // Limit brightness between 0.0 and 1.0
+    if (brightness < 0.0f) brightness = 0.0f;
+    if (brightness > 1.0f) brightness = 1.0f;
+
+    for (int i = 0; i < 4; i++) {  // Assuming 4 LEDs for now
+        // Example: white color scaled by brightness
+        led_set_color_brightness(i, 255, 255, 255, brightness);
+    }
+
+    ESP_LOGI(TAG, "Global LED brightness set to %.2f", brightness);
+}
