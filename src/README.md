@@ -8,6 +8,11 @@ node -v
 npm -v
 ```
 
+# Proper configuration of packages
+```sh
+npm install react-native-ble-plx
+```
+
 # Running the app on an android emulator
 Ensure in correct directory within terminal before running through following steps
 
