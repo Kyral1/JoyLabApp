@@ -17,8 +17,10 @@ emulator -list-avds
 
 emulator -avd <device name>
 ```
+Wait until Android home screen shows.
 
 ## 2. Start Metro Bundler
+In one terminal:
 ```sh
 npx react-native start
 ```
