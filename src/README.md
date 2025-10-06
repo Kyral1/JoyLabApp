@@ -10,7 +10,7 @@ npm -v
 
 # Proper configuration of packages
 ```sh
-npm install react-native-ble-plx
+npm install
 ```
 
 # Running the app on an android emulator
