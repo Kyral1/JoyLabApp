@@ -8,9 +8,8 @@ node -v
 npm -v
 ```
 
-# Ensure in correct directory within terminal
-
 # Running the app on an android emulator
+Ensure in correct directory within terminal before running through following steps
 
 ## 1. Start metro service
 ```sh
