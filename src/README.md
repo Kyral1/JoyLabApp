@@ -36,3 +36,7 @@ In a second terminal:
 ```sh
 npx react-native run-android
 ```
+
+# Running the app on ios device
+
+## 1. 
