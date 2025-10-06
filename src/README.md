@@ -11,24 +11,19 @@ npm -v
 # Running the app on an android emulator
 Ensure in correct directory within terminal before running through following steps
 
-## 1. Start metro service
-```sh
-npm start
-```
-
-## 2. Start the emulator
+## 1. Start the emulator
 ```sh
 emulator -list-avds
 
 emulator -avd <device name>
 ```
 
-## 3. Start Metro Bundler
+## 2. Start Metro Bundler
 ```sh
 npx react-native start
 ```
 
-## 4. Build and install the application
+## 3. Build and install the application
 In a second terminal:
 
 ```sh
