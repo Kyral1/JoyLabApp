@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "bluetooth.h"
 #include "LED_Control.h"
 #include "Button_Control.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "MAIN";
 

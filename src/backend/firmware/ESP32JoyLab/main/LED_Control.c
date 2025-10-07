@@ -1,37 +1,54 @@
-//pulls in ESP-IDF’s GPIO driver library
 #include "LED_Control.h"
 #include "esp_log.h"
+#include "driver/spi_master.h"
 #include "led_strip.h"
 
-//Log Tag - any messages from this file will have the tag below
+// Log tag for debugging messages
 static const char *TAG = "LED_CONTROL";
 
-//object representing LED strip
+// Object representing the LED strip
 static led_strip_handle_t led_strip;
 
-//prepares all LEDs for use (reset + set as outputs)
-void led_init(void){
-    //dont have to include logs -- good for debugging
-    ESP_LOGI(TAG, "Initializing DotStar LED strip");
+// Initialize the LED strip
+void led_init(void) {
+    ESP_LOGI(TAG, "Initializing DotStar LED strip...");
 
-    led_strip_config_t strip_config = { //describes data strip
-        .strip_gpio_num = 5 //CHANGE later
-        .max_leds = 4 //# in strip
+    // --- SPI Bus Config ---
+    spi_bus_config_t buscfg = {
+        .mosi_io_num = 12,   // Data
+        .sclk_io_num = 13,   // Clock
+        .miso_io_num = -1,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
     };
 
-    led_strip_spi_config_t spi_config = { //using spi
+    // Initialize SPI bus, but don't crash if it's already initialized
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
+    if (ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "SPI bus already initialized — continuing");
+    } else {
+        ESP_ERROR_CHECK(ret);
+    }
+
+    // --- LED Strip Config ---
+    led_strip_config_t strip_config = {
+        .strip_gpio_num = -1,  // SPI uses MOSI/SCLK, no GPIO needed here
+        .max_leds = 4,
+    };
+
+    led_strip_spi_config_t spi_config = {
         .spi_bus = SPI2_HOST,
         .flags.with_dma = true,
     };
 
-    //creating LED strip object and assigning it to LED_strip
     ESP_ERROR_CHECK(led_strip_new_spi_device(&strip_config, &spi_config, &led_strip));
-    led_strip_clear(led_strip); //turns all LEDs OFF to start
+    ESP_ERROR_CHECK(led_strip_clear(led_strip));
+
+    ESP_LOGI(TAG, "DotStar LED strip initialized successfully!");
 }
 
-//LED at position INDEX Color (turn ON)
-void led_set_color_brightness(int index, uint8_t r, uint8_t g, uint8_t b, float brightness){
-    //scale each RGB to correct brightness
+// Set specific LED color with brightness scaling
+void led_set_color_brightness(int index, uint8_t r, uint8_t g, uint8_t b, float brightness) {
     uint8_t r_scaled = (uint8_t)(r * brightness);
     uint8_t g_scaled = (uint8_t)(g * brightness);
     uint8_t b_scaled = (uint8_t)(b * brightness);
@@ -40,24 +57,23 @@ void led_set_color_brightness(int index, uint8_t r, uint8_t g, uint8_t b, float 
     ESP_ERROR_CHECK(led_strip_refresh(led_strip));
 }
 
-//Single LED OFF
-void led_clear_one(int index){
+// Turn off a single LED
+void led_clear_one(int index) {
     ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, index, 0, 0, 0));
-    ESP_ERROR_CHECK(led_strip_refresh(led_strip)); //send LED values over the wire
+    ESP_ERROR_CHECK(led_strip_refresh(led_strip));
 }
-//ALL LEDs OFF
+
+// Turn off all LEDs
 void led_clear(void) {
     ESP_ERROR_CHECK(led_strip_clear(led_strip));
 }
 
-//LED All Brightness
+// Adjust brightness for all LEDs
 void led_set_global_brightness(float brightness) {
-    // Limit brightness between 0.0 and 1.0
     if (brightness < 0.0f) brightness = 0.0f;
     if (brightness > 1.0f) brightness = 1.0f;
 
-    for (int i = 0; i < 4; i++) {  // Assuming 4 LEDs for now
-        // Example: white color scaled by brightness
+    for (int i = 0; i < 4; i++) {
         led_set_color_brightness(i, 255, 255, 255, brightness);
     }
 

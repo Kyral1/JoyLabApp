@@ -2,6 +2,8 @@
 #define BUTTON_CONTROL_H
 
 #include <stdbool.h>
+#include <stdint.h>
+
 
 #define NUM_BUTTONS 5 //can change later
 extern const int button_pins[NUM_BUTTONS]; // Define which GPIO pins are used for the buttons

@@ -7,6 +7,8 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include <stdint.h>
+
 
 #ifdef __cplusplus
 extern "C" {
