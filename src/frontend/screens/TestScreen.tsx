@@ -8,10 +8,10 @@ import { bleService } from '../services/BLEService';
 export default function TestScreen() {
     console.log("🧪 TestScreen loaded!");
 
-    // LED States
+    // LED States -- when the app is closed and repened, it will reset to these default states
     const [selectedLED, setSelectedLED] = useState('All');
-    const [brightness, setBrightness] = useState(0.5);
-    const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 });
+    const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
+    const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
 
     //Button Test States
     const [buttonTestActive, setButtonTestActive] = useState(false);
@@ -31,9 +31,9 @@ export default function TestScreen() {
     const handleToggleLED = (on:boolean) => {
         const idx = selectedLED === "All" ? 255 : parseInt(selectedLED) - 1;
         const { r, g, b } = currentColor;
-        const br = Math.round(brightness * 100);
+        const br = Math.round(brightness * 100); //slider placement
 
-        const frame = [0x01, 0x01, 0x05, idx, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
+        const frame = [0x01, 0x01, 0x05, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
         sendFrame(frame);
     }
 
@@ -45,8 +45,9 @@ export default function TestScreen() {
         sendFrame(frame);
     }
 
+    //Change LED Brightness
     const handleBrightnessChange = (val: number) => {
-        setBrightness(val);
+        setBrightness(val); //updates the state to remember the slider position
         const br = Math.round(val * 100);
         const frame = [0x01, 0x03, 0x01, br]; // CAT=1, CMD=3
         sendFrame(frame);
@@ -106,7 +107,7 @@ export default function TestScreen() {
             <TouchableOpacity
               key={c.name}
               style={[styles.colorBtn, { backgroundColor: c.color }]}
-              onPress={() => handleChangeColor(c.rgb)}
+              onPress={() => {setCurrentColor(c.rgb);  handleChangeColor(c.rgb);}} //change color + remember color
             />
           ))}
         </View>
