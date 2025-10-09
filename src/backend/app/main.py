@@ -3,7 +3,7 @@
 #written in python, but speaks in web languages
 
 from fastapi import FastAPI
-from app.routes import settings, stats, pairing, modes #imports seperate routes files
+from app.routes import settings, stats, pairing, modes, users #imports seperate routes files
 
 app = FastAPI(title="JoyLab Backend")
 
@@ -12,7 +12,7 @@ app.include_router(settings.router)
 app.include_router(stats.router)
 app.include_router(pairing.router)
 app.include_router(modes.router)
-
+app.include_router(users.router)  # Register the users router
 
 #can get rid off later (just confirmation for now)
 @app.get("/")
