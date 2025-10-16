@@ -2,16 +2,16 @@
 #include <string.h>
 #include "esp_log.h"
 #include "nvs_flash.h"
-
 #include "esp_bt.h"
 #include "esp_bt_main.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_gatt_common_api.h"
+#include "esp_bt_main.h"
 
-#include "LED_Control.h"   // your LED driver (led_init, led_set_color_brightness, led_clear_one)
+#include "LED_Control.h"   //  LED driver (led_init, led_set_color_brightness, led_clear_one)
 #include "Bluetooth.h"
-#include "Button_Control.h" // your button driver (button_init, button_read_all)
+#include "Button_Control.h" //  button driver (button_init, button_read_all)
 
 #define TAG "BT_JOYLAB"
 
@@ -27,40 +27,42 @@ static const char *kDeviceName = "JoyLabToy"; // tells ESP32 to advertise itself
 
 //Categories (Cat)
 typedef enum {
-    CAT_LEDS = 0x01,
+    CAT_LED = 0x01,
     CAT_AUDIO = 0x02,
     CAT_MOTOR = 0x03,
     CAT_GAME = 0x04,
     CAT_BUTTON = 0x05,
-}
+};
 
 //Commands (cmd) - LED
 enum{
     CMD_LED_SET_PIXEL = 0x01, //payload: 
     CMD_LED_SET_MODE = 0x02,  //payload: modeID
-    CMD_LED_SET_BRIGHT = 0x03 //payload: brightness 0-100
-}
+    CMD_LED_SET_BRIGHT = 0x03, //payload: brightness 0-100
+    CMD_GM_START_TRIAL = 0x10,
+    CMD_GM_CANCEL      = 0x11,
+};
 
 //commands - AUDIO
 enum{
     CMD_AU_SET_VOL = 0x01,   //payload: volume 0-100
-}
+};
 
 //commands - MOTOR
 enum{
     CMD_MO_SET_INTENSITY = 0x01, //payload: intensity 0-100
-}
+};
 
 //commands - GAME
 enum{
     CMD_GA_START = 0x01, //payload: gameID
     CMD_GA_STOP = 0x02,  //payload: none
-}
+};
 
 //EVENTS (esp32 -> phone)
 enum{
     EVT_GAME_RESULT = 0x81, //payload: 
-}
+};
 
 //settings snapshot
 typedef struct {
@@ -88,14 +90,20 @@ static ble_ctx_t s = {
   .h_ctrl = 0,
   .h_sett = 0,
   .h_evts = 0,
-  .settings = { .led_mode = 1, .volume = 60, .def_bright = 100 },
+  .settings = { .LED_mode = 1, .volume = 60, .brightness = 100 },
   .led_ready = false,
 };
 
 // advertise the 16-bit service UUID 
-static uint8_t kSrvUuid16[2] = {
+/*static uint8_t kSrvUuid16[2] = {
   (uint8_t)(SRV_UUID & 0xFF),
   (uint8_t)((SRV_UUID >> 8) & 0xFF),
+};*/
+static uint8_t kSrvUuid128[16] = {
+  0xfb, 0x34, 0x9b, 0x5f,
+  0x80, 0x00, 0x00, 0x80,
+  0x00, 0x10, 0x00, 0x00,
+  0x34, 0x12, 0x00, 0x00
 };
 
 static esp_ble_adv_params_t kAdvParams = {
@@ -115,12 +123,12 @@ static esp_ble_adv_data_t kAdvData = {
     .max_interval      = 0x40,
     .appearance        = 0x00,
     .flag              = (ESP_BLE_ADV_FLAG_GEN_DISC | ESP_BLE_ADV_FLAG_BREDR_NOT_SPT),
-    .service_uuid_len  = sizeof(kSrvUuid16),
-    .p_service_uuid    = kSrvUuid16,
+    .service_uuid_len  = sizeof(kSrvUuid128),
+    .p_service_uuid    = kSrvUuid128,
 };
 
 // =========================== SMALL HELPERS ===================================
-static incline void start_advertising(void) {
+static inline void start_advertising(void) {
     esp_ble_gap_start_advertising(&kAdvParams);
     ESP_LOGI(TAG, "Started advertising");
 }
@@ -149,21 +157,21 @@ static void settings_send_read_rsp(esp_ble_gatts_cb_param_t *p) {
   esp_gatt_rsp_t rsp = {0};
   rsp.attr_value.handle = p->read.handle;
   rsp.attr_value.len    = 3;
-  rsp.attr_value.value[0] = s.settings.led_mode;
+  rsp.attr_value.value[0] = s.settings.LED_mode;
   rsp.attr_value.value[1] = s.settings.volume;
-  rsp.attr_value.value[2] = s.settings.def_bright;
+  rsp.attr_value.value[2] = s.settings.brightness;
   esp_ble_gatts_send_response(s.ifx, p->read.conn_id, p->read.trans_id, ESP_GATT_OK, &rsp);
 }
 
 static void settings_apply_and_store(const uint8_t *val, uint16_t len) {
   if (len < 3) return; // ignore malformed
-  s.settings.led_mode   = val[0];
+  s.settings.LED_mode   = val[0];
   s.settings.volume     = val[1];
-  s.settings.def_bright = val[2];
+  s.settings.brightness = val[2];
   // Keep GATT attribute value in sync with our struct (so later reads reflect updates)
   esp_ble_gatts_set_attr_value(s.h_sett, 3, (uint8_t*)&s.settings);
   ESP_LOGI(TAG, "Settings updated: mode=%u vol=%u bright=%u",
-           s.settings.led_mode, s.settings.volume, s.settings.def_bright);
+           s.settings.LED_mode, s.settings.volume, s.settings.brightness);
   // TODO: apply to your subsystems (PWM for volume, default LED brightness, etc.)
 }
 
@@ -184,7 +192,7 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
 }
 
 static void cmd_led_set_mode(uint8_t mode) {
-  s.settings.led_mode = mode;
+  s.settings.LED_mode = mode;
   ESP_LOGI(TAG, "LED mode set to %u", mode);
   // TODO: wire into your game/mode engine
 }
@@ -244,7 +252,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       break;
 
     case CAT_MOTOR:
-      if (cmd == CMD_MO_SET_INTEN && len >= 2) cmd_motor_set_intensity(pl[0], pl[1]);
+      if (cmd == CMD_MO_SET_INTENSITY && len >= 2) cmd_motor_set_intensity(pl[0], pl[1]);
       break;
 
     case CAT_GAME:
@@ -258,26 +266,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
   }
 }
 
-// ---- GAP (advertising) ------------------------------------------------------
-static void gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
-    switch (event) {
-    case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising(&s_adv_params);
-        break;
-    case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
-        if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
-            ESP_LOGE(TAG, "Adv start failed: %d", param->adv_start_cmpl.status);
-        } else {
-            ESP_LOGI(TAG, "Advertising started");
-        }
-        break;
-    case ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT:
-        ESP_LOGI(TAG, "Advertising stopped");
-        break;
-    default:
-        break;
-    }
-}
+
 // ============================= GAP CALLBACK ==================================
 
 static void gap_cb(esp_gap_ble_cb_event_t e, esp_ble_gap_cb_param_t *p) {
@@ -324,7 +313,7 @@ static void gatts_cb(esp_gatts_cb_event_t e, esp_gatt_if_t ifx, esp_ble_gatts_cb
       ));
 
       // SETTINGS (Read/Write) — initial snapshot is 3 bytes
-      uint8_t init_sett[3] = { s.settings.led_mode, s.settings.volume, s.settings.def_bright };
+      uint8_t init_sett[3] = { s.settings.LED_mode, s.settings.volume, s.settings.brightness };
       ESP_ERROR_CHECK(add_char16(
         SETT_UUID,
         ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE,
