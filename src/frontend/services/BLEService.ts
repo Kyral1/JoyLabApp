@@ -1,5 +1,7 @@
 import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
+import { PermissionsAndroid, Platform } from 'react-native';
+
 
 const TOY_NAME = 'JoyLabToy';
 const SERVICE_UUID = '00001234-0000-1000-8000-00805f9b34fb';
@@ -16,7 +18,19 @@ class BLEService {
     this.manager = new BleManager();
   }
 
+  async requestBlePermissions() {
+    if (Platform.OS === 'android' && Platform.Version >= 31) {
+      const result = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      ]);
+      console.log('BLE Permissions:', result);
+    }
+  }
+
   async connect(): Promise<void> {
+    await this.requestBlePermissions();
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.manager.stopDeviceScan();

@@ -7,6 +7,8 @@
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include "esp_bt_main.h"
+
 #include <stdint.h>
 
 
@@ -17,10 +19,10 @@ extern "C" {
 // ===================== UUID DEFINITIONS ======================
 // Main JoyLab BLE service and characteristics (match bluetooth.c)
 
-#define JOYLAB_SERVICE_UUID     0x1234  // Primary Service
-#define JOYLAB_CTRL_UUID        0xABCD  // Control Characteristic (Write NR)
-#define JOYLAB_SETT_UUID        0xABCE  // Settings Characteristic (Read/Write)
-#define JOYLAB_EVTS_UUID        0xABCF  // Events Characteristic (Notify)
+#define SERVICE_UUID     0x1234  // Primary Service
+#define CTRL_UUID        0xABCD  // Control Characteristic (Write NR)
+#define SETT_UUID        0xABCE  // Settings Characteristic (Read/Write)
+#define EVTS_UUID        0xABCF  // Events Characteristic (Notify)
 
 // ===================== PUBLIC FUNCTIONS ======================
 
