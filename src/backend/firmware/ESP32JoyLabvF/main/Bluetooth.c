@@ -12,6 +12,7 @@
 #include "LED_Control.h"   //  LED driver (led_init, led_set_color_brightness, led_clear_one)
 #include "Bluetooth.h"
 #include "Button_Control.h" //  button driver (button_init, button_read_all)
+#include "VibrationMotor.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -50,7 +51,7 @@ enum{
 
 //commands - MOTOR
 enum{
-    CMD_MO_SET_INTENSITY = 0x01, //payload: intensity 0-100
+    CMD_MO_SET_STATE = 0x01, //payload: intensity 0-100
 };
 
 //commands - GAME
@@ -81,6 +82,7 @@ typedef struct {
   uint16_t      h_evts;
   joy_settings_t settings;
   bool          led_ready;      // init LED driver once
+  bool          motor_ready;
 } ble_ctx_t; //holds all runtime context
 
 static ble_ctx_t s = {
@@ -92,6 +94,7 @@ static ble_ctx_t s = {
   .h_evts = 0,
   .settings = { .LED_mode = 1, .volume = 60, .brightness = 100 },
   .led_ready = false,
+  .motor_ready = false,
 };
 
 // advertise the 16-bit service UUID 
@@ -135,6 +138,10 @@ static inline void start_advertising(void) {
 
 static void ensure_led_ready(void){
     if (!s.led_ready) {led_init(); s.led_ready = true;}
+}
+
+static void ensure_motor_ready(void){
+  if(!s.motor_ready){vibration_init(); s.motor_ready = true;}
 }
 
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
@@ -211,10 +218,11 @@ static void cmd_audio_set_volume(uint8_t vol) {
   // TODO: map to PWM duty for your amp/speaker
 }
 
-static void cmd_motor_set_intensity(uint8_t id, uint8_t pct) {
-  if (pct > 100) pct = 100;
-  ESP_LOGI(TAG, "Motor id=%u intensity=%u", id, pct);
-  // TODO: drive motor/rumble by PWM
+static void cmd_motor_set_state(uint8_t on) {
+  ensure_motor_ready();
+  bool state = (on >0);
+  vibration_set_state(state);
+  ESP_LOGI(TAG, "BLE Motor toggle: %s", state ? "ON" : "OFF");
 }
 
 static void cmd_game_start_trial(void) {
@@ -259,7 +267,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       break;
 
     case CAT_MOTOR:
-      if (cmd == CMD_MO_SET_INTENSITY && len >= 2) cmd_motor_set_intensity(pl[0], pl[1]);
+      if (cmd == CMD_MO_SET_STATE && len >= 1) cmd_motor_set_state(pl[0]);
       break;
 
     case CAT_GAME:

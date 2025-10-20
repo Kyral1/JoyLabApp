@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import {View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from "react-native";
+import {View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Switch } from "react-native";
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
@@ -12,7 +12,7 @@ export default function TestScreen() {
     const [selectedLED, setSelectedLED] = useState('All');
     const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
     const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
-
+    const [vibration, setVibration] = useState(false);
     //Button Test States
     const [buttonTestActive, setButtonTestActive] = useState(false);
 
@@ -53,6 +53,13 @@ export default function TestScreen() {
         const br = Math.round(val * 100);
         const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
         sendFrame(frame);
+    }
+
+    //vibration toggle
+    const handleVibrationToggle = (on: boolean) => {
+      setVibration(on);
+      const frame = [0x03, 0x01, 0x01, on ? 1: 0]
+      sendFrame(frame)
     }
 
     //button test handler
@@ -126,6 +133,20 @@ export default function TestScreen() {
           maximumTrackTintColor="#D6DBDF"
         />
       </View>
+
+      {/* Vibration Motor */}
+      <View style={styles.card}>
+        <Text style={styles.sectionHeader}>Vibration Motor Test</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Vibration</Text>
+          <Switch
+            value={vibration}
+            onValueChange={handleVibrationToggle}
+            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+            thumbColor="#fff"
+          />
+        </View>
+      </View>     
     </ScrollView>
   );
 }

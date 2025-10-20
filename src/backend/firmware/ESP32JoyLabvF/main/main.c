@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 #include "Bluetooth.h"
 #include "driver/gpio.h"
+#include "VibrationMotor.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
