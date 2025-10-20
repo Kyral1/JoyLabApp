@@ -188,7 +188,14 @@ static void evt_notify_game_result_ms(uint16_t ms) {
 static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint8_t br_pct) {
   ensure_led_ready();
   float br = (float)br_pct / 100.0f;
-  led_set_color_brightness((int)idx, r, g, b, br);
+  if(idx == 111){
+    for(int i = 0; i<72; i++){
+      led_set_color_brightness(i, r, g, b, br);
+    }
+  }else{
+      led_set_color_brightness(idx, r, g, b, br);
+  }
+  led_show();
 }
 
 static void cmd_led_set_mode(uint8_t mode) {

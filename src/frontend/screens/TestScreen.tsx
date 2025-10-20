@@ -29,7 +29,7 @@ export default function TestScreen() {
     //LED Control Handlers
     //Toggle LED On/Off
     const handleToggleLED = (on:boolean) => {
-        const idx = selectedLED === "All" ? 255 : parseInt(selectedLED) - 1;
+        const idx = selectedLED === "All" ? 111 : parseInt(selectedLED) - 1;
         const { r, g, b } = currentColor;
         const br = Math.round(brightness * 100); //slider placement
 
@@ -39,7 +39,7 @@ export default function TestScreen() {
 
     //Change LED Color
     const handleChangeColor = (color: {r: number; g: number; b:number})=>{
-        const idx = selectedLED === "All" ? 255 : parseInt(selectedLED) - 1;
+        const idx = selectedLED === "All" ? 111 : parseInt(selectedLED) - 1;
         const br = Math.round(brightness * 100);
         const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
         sendFrame(frame);
@@ -48,8 +48,10 @@ export default function TestScreen() {
     //Change LED Brightness
     const handleBrightnessChange = (val: number) => {
         setBrightness(val); //updates the state to remember the slider position
+        const {r,g,b} = currentColor;
+        const idx = selectedLED  === "All" ? 111 : parseInt(selectedLED) - 1;
         const br = Math.round(val * 100);
-        const frame = [0x01, 0x03, 0x01, br]; // CAT=1, CMD=3
+        const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
         sendFrame(frame);
     }
 

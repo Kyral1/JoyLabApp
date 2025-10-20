@@ -10,7 +10,8 @@
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
-/*
+
+
 //-----------BLE TESTING -----------
 void app_main(void)
 {
@@ -27,10 +28,62 @@ void app_main(void)
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
 
+    /*led_init();
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = 1ULL << BUTTON_GPIO,
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 0,
+        .pull_down_en = 1,  // enable internal pulldown
+        .intr_type = GPIO_INTR_DISABLE 
+    };
+    gpio_config(&io_conf);*/
+
+    //int color_state = 0;
+    //int num_leds = 72;
+
     while(1){
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        /*int button_state = gpio_get_level(BUTTON_GPIO);
+        printf("Button state: %d\n", button_state);
+
+        if (button_state == 1)
+        {
+            led_clear();
+            led_show();
+        }
+        else
+        {
+            if (color_state == 0){
+                for (int i = 0; i < num_leds; i++){
+                    led_set_color_brightness(i, 255, 0, 255, 0.5f);  // Red
+                }
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+            else if (color_state == 1)
+            {
+                for (int i = 0; i < num_leds; i++){
+                    led_set_color_brightness(i, 0, 0, 255, 0.5f);  // Blue
+                }
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+            else if (color_state == 2) 
+            {
+                for (int i = 0; i < num_leds; i++){
+                    led_set_color_brightness(i, 0, 255, 255, 0.5f);  // Green
+                }
+                vTaskDelay(pdMS_TO_TICKS(1000));
+            }
+
+            led_show();
+
+            // Move to next color
+            color_state = (color_state + 1) % 3;
+
+        }*/
+
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
-}*/
+}
 
 //-----------BUTTON + LED TESTING -----------
 /*
@@ -70,6 +123,8 @@ void app_main(void) {
     }
 }*/
 
+
+/*
 //Button simulation
 void app_main(void){
     led_init();
@@ -103,7 +158,7 @@ void app_main(void){
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-}
+}*/
 
 
 /*
