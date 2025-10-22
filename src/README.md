@@ -32,11 +32,27 @@ npx react-native start
 
 ## 3. Build and install the application
 In a second terminal:
-
 ```sh
 npx react-native run-android
 ```
 
-# Running the app on ios device
+# Running the app on andorid device
+## 1. Ensure phone is in developer mode
+Settings
+About Phone
+Tap 'Build number' 7 times
 
-## 1. 
+## 2. Connect phone to laptop with code
+
+## 3. Start Metro Bundler
+In one terminal:
+```sh
+npx react-native start
+```
+
+## 4. Build and install application
+In a second terminal:
+
+```sh
+npx react-native run-android
+```
