@@ -15,6 +15,7 @@
 #include "VibrationMotor.h"
 #include "Speaker_Control.h"
 #include "IRS_Control.h"
+#include "ForceSensor_Control.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -36,6 +37,13 @@ typedef enum {
     CAT_GAME = 0x04,
     CAT_BUTTON = 0x05,
     CAT_IRS = 0x06,
+    CAT_FORCE = 0x07,
+};
+
+//Commands - Force Sensor
+enum{
+  CMD_FORCE_START_CONT = 0x01, 
+  CMD_FORCE_END_CONT = 0x02,
 };
 
 //Commands - IRS
@@ -95,6 +103,7 @@ typedef struct {
   bool          motor_ready;
   bool          speaker_ready;
   bool          irs_ready;
+  bool          force_ready;
 } ble_ctx_t; //holds all runtime context
 
 static ble_ctx_t s = {
@@ -109,9 +118,11 @@ static ble_ctx_t s = {
   .motor_ready = false,
   .speaker_ready = false,
   .irs_ready = false,
+  .force_ready = false,
 };
 
 static TaskHandle_t irs_task_handle = NULL;
+static TaskHandle_t force_task_handle = NULL;
 
 // advertise the 16-bit service UUID 
 /*static uint8_t kSrvUuid16[2] = {
@@ -168,6 +179,9 @@ static void ensure_irs_ready(void){
   if(!s.irs_ready){irs_init(); s.irs_ready = true;}
 }
 
+static void ensure_force_ready(void){
+  if(!s.force_ready){irs_init(); s.force_ready = true;}
+}
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
 static esp_err_t add_char16(uint16_t uuid16,
                             uint16_t perms,
@@ -232,6 +246,24 @@ static void ble_notify_distance(uint16_t distance_mm) {
         false  // notification, not indication
     );
 }
+
+//sending pressure data helper
+static void ble_notify_force(float pressure){
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+  uint16_t scaled = (uint16_t)(pressure * 100); //sends PSI
+  uint8_t payload[3];
+  payload[0] = 0x91;
+  payload[1] = scaled & 0xFF;
+  payload[2] = (scaled >> 8) & 0xFF;
+      esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification, not indication
+    );
+}
 // ============================ CONTROL (WriteNR) ==============================
 
 static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint8_t br_pct) {
@@ -281,6 +313,15 @@ static void irs_continuous_task(void *pvParameters) {
     }
 }
 
+static void force_continuous_task(void *pvParameters){
+  ensure_force_ready();
+  while(1){
+    float pressure = force_sensor_read();
+    ble_notify_force(pressure);
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+}
+
 static void start_irs_continuous_task(void) {
     if (irs_task_handle == NULL) {
         ESP_LOGI(TAG, "Starting IRS continuous updates...");
@@ -297,6 +338,19 @@ static void start_irs_continuous_task(void) {
     }
 }
 
+static void start_force_continuous_task(void){
+  if(force_task_handle == NULL){
+    xTaskCreate(force_continuous_task, 
+      "force_task", 
+      4096, 
+      NULL, 
+      5, 
+      &force_task_handle);
+  }else{
+    ESP_LOGW(TAG, "Force task already running");
+  }
+}
+
 // Stop continuous ranging + BLE updates
 static void stop_irs_continuous_task(void) {
     if (irs_task_handle != NULL) {
@@ -306,6 +360,16 @@ static void stop_irs_continuous_task(void) {
     } else {
         ESP_LOGW(TAG, "IRS continuous task not running");
     }
+}
+
+static void stop_force_continuous_task(void){
+  if(force_task_handle != NULL){
+    ESP_LOGI(TAG, "Stopping Force Sensor updates...");
+    vTaskDelete(force_task_handle);
+    force_task_handle = NULL;
+  }else{
+    ESP_LOGW(TAG, "Force task not running");
+  }
 }
 
 static void cmd_game_start_trial(void) {
@@ -376,6 +440,16 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
             break;
       }
       break;
+    
+    case CAT_FORCE:
+      switch (cmd) {
+        case CMD_FORCE_START_CONT:
+          start_force_continuous_task();
+          break;
+        case CMD_FORCE_END_CONT:
+          stop_force_continuous_task();
+          break;
+      }break;
 
     default:
       // Unknown category — safely ignore

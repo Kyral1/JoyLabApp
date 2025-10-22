@@ -16,6 +16,8 @@ export default function TestScreen() {
     const [audio, setAudio] = useState(false);
     const [irsOn, setIrsOn] = useState(false);
     const [distance, setDistance] = useState(0);
+    const [forceOn, setForceOn] = useState(false);
+    const [pressure, setPressure] = useState(0);
     //Button Test States
     const [buttonTestActive, setButtonTestActive] = useState(false);
 
@@ -97,6 +99,14 @@ export default function TestScreen() {
       sendFrame(frame);
 
       if (!on) setDistance(0);
+    }
+
+    const handleForceToggle = (on:boolean) => {
+      setForceOn(on);
+      const frame = [0x07, on? 0x01 : 0x02, 0x00];
+      sendFrame(frame);
+
+      if(!on) setPressure(0);
     }
 
     //button test handler
@@ -191,7 +201,7 @@ export default function TestScreen() {
         <View style={styles.row}>
           <Text style={styles.label}>Audio</Text>
           <Switch
-            value={vibration}
+            value={audio}
             onValueChange={audioToggle}
             trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
             thumbColor="#fff"
@@ -210,8 +220,8 @@ export default function TestScreen() {
       </View> 
 
       {/* IRS Sensor */}
-      <View style={styles.card}>
-      <Text style={styles.sectionHeader}>Infrared Distance Sensor</Text>
+    <View style={styles.card}>
+      <Text style={styles.sectionHeader}>IR Distance Sensor</Text>
 
       <View style={styles.row}>
         <Text style={styles.label}>IRS Streaming</Text>
@@ -223,11 +233,34 @@ export default function TestScreen() {
         />
       </View>
 
-      {/* Distance Display */}
+      {/* Distance Display (mm I think)*/}
       <View style={[styles.row, { marginTop: 10 }]}>
         <Text style={styles.label}>Distance (mm):</Text>
         <Text style={[styles.label, { fontWeight: "700", color: "#4A7FFB" }]}>
           {distance}
+        </Text>
+      </View>
+    </View>
+
+    {/* Force Display (PSI)*/}
+    <View style={styles.card}>
+      <Text style={styles.sectionHeader}>Force Pressure Sensor</Text>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>Pressure Streaming</Text>
+        <Switch
+          value={forceOn}
+          onValueChange={handleForceToggle}
+          trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+          thumbColor="#fff"
+        />
+      </View>
+
+      {/* Pressure Display (PSI I think)*/}
+      <View style={[styles.row, { marginTop: 10 }]}>
+        <Text style={styles.label}>Pressure (PSI):</Text>
+        <Text style={[styles.label, { fontWeight: "700", color: "#4A7FFB" }]}>
+          {pressure}
         </Text>
       </View>
     </View>
