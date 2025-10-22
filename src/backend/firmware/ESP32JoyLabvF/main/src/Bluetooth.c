@@ -13,6 +13,8 @@
 #include "Bluetooth.h"
 #include "Button_Control.h" //  button driver (button_init, button_read_all)
 #include "VibrationMotor.h"
+#include "Speaker_Control.h"
+#include "IRS_Control.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -33,6 +35,13 @@ typedef enum {
     CAT_MOTOR = 0x03,
     CAT_GAME = 0x04,
     CAT_BUTTON = 0x05,
+    CAT_IRS = 0x06,
+};
+
+//Commands - IRS
+enum{
+  CMD_IRS_START_CONT = 0x01,
+  CMD_IRS_END_CONT = 0x02,
 };
 
 //Commands (cmd) - LED
@@ -46,7 +55,8 @@ enum{
 
 //commands - AUDIO
 enum{
-    CMD_AU_SET_VOL = 0x01,   //payload: volume 0-100
+    CMD_AU_SET_STATE = 0x01,
+    CMD_AU_SET_VOL = 0x02,   //payload: volume 0-100
 };
 
 //commands - MOTOR
@@ -83,6 +93,8 @@ typedef struct {
   joy_settings_t settings;
   bool          led_ready;      // init LED driver once
   bool          motor_ready;
+  bool          speaker_ready;
+  bool          irs_ready;
 } ble_ctx_t; //holds all runtime context
 
 static ble_ctx_t s = {
@@ -95,7 +107,11 @@ static ble_ctx_t s = {
   .settings = { .LED_mode = 1, .volume = 60, .brightness = 100 },
   .led_ready = false,
   .motor_ready = false,
+  .speaker_ready = false,
+  .irs_ready = false,
 };
+
+static TaskHandle_t irs_task_handle = NULL;
 
 // advertise the 16-bit service UUID 
 /*static uint8_t kSrvUuid16[2] = {
@@ -144,6 +160,14 @@ static void ensure_motor_ready(void){
   if(!s.motor_ready){vibration_init(); s.motor_ready = true;}
 }
 
+static void ensure_speaker_ready(void){
+  if(!s.speaker_ready){speaker_init(); s.speaker_ready = true;}
+}
+
+static void ensure_irs_ready(void){
+  if(!s.irs_ready){irs_init(); s.irs_ready = true;}
+}
+
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
 static esp_err_t add_char16(uint16_t uuid16,
                             uint16_t perms,
@@ -190,6 +214,24 @@ static void evt_notify_game_result_ms(uint16_t ms) {
   esp_ble_gatts_send_indicate(s.ifx, s.conn_id, s.h_evts, sizeof(payload), payload, false);
 }
 
+//BLE Notify helpers
+//IRS Distance notify:
+static void ble_notify_distance(uint16_t distance_mm) {
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+    // Event payload: [event_code, low_byte, high_byte]
+    uint8_t payload[3];
+    payload[0] = 0x90;                       // custom event code for IRS
+    payload[1] = distance_mm & 0xFF;         // lower byte
+    payload[2] = (distance_mm >> 8) & 0xFF;  // upper byte
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification, not indication
+    );
+}
 // ============================ CONTROL (WriteNR) ==============================
 
 static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint8_t br_pct) {
@@ -211,11 +253,17 @@ static void cmd_led_set_mode(uint8_t mode) {
   // TODO: wire into your game/mode engine
 }
 
+static void cmd_audio_set_state(uint8_t on){
+  ensure_speaker_ready();  // ensure pin is ready
+  bool state = (on > 0);
+  speaker_set_state(state);
+  ESP_LOGI(TAG, "BLE Speaker toggle: %s", state ? "ON" : "OFF");
+}
+
 static void cmd_audio_set_volume(uint8_t vol) {
-  if (vol > 100) vol = 100;
-  s.settings.volume = vol;
-  ESP_LOGI(TAG, "Volume set to %u", vol);
-  // TODO: map to PWM duty for your amp/speaker
+    ensure_speaker_ready(); 
+    speaker_set_volume(vol);
+    ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
 static void cmd_motor_set_state(uint8_t on) {
@@ -223,6 +271,41 @@ static void cmd_motor_set_state(uint8_t on) {
   bool state = (on >0);
   vibration_set_state(state);
   ESP_LOGI(TAG, "BLE Motor toggle: %s", state ? "ON" : "OFF");
+}
+
+static void irs_continuous_task(void *pvParameters) {
+    ensure_irs_ready();  
+    while (1) {
+        uint16_t distance = irs_read_distance_mm();
+        ble_notify_distance(distance);
+    }
+}
+
+static void start_irs_continuous_task(void) {
+    if (irs_task_handle == NULL) {
+        ESP_LOGI(TAG, "Starting IRS continuous updates...");
+        xTaskCreate(
+            irs_continuous_task,    // Task function
+            "irs_continuous_task",  // Task name
+            4096,                   // Stack size
+            NULL,                   // Parameters
+            5,                      // Priority
+            &irs_task_handle        // Task handle
+        );
+    } else {
+        ESP_LOGW(TAG, "IRS continuous task already running");
+    }
+}
+
+// Stop continuous ranging + BLE updates
+static void stop_irs_continuous_task(void) {
+    if (irs_task_handle != NULL) {
+        ESP_LOGI(TAG, "Stopping IRS continuous updates...");
+        vTaskDelete(irs_task_handle);
+        irs_task_handle = NULL;
+    } else {
+        ESP_LOGW(TAG, "IRS continuous task not running");
+    }
 }
 
 static void cmd_game_start_trial(void) {
@@ -263,7 +346,14 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       break;
 
     case CAT_AUDIO:
-      if (cmd == CMD_AU_SET_VOL && len >= 1) cmd_audio_set_volume(pl[0]);
+      switch (cmd){
+        case CMD_AU_SET_STATE:
+          if (len >= 1) cmd_audio_set_state(pl[0]);
+          break;
+        case CMD_AU_SET_VOL:
+          if (len >= 1) cmd_audio_set_volume(pl[0]);
+          break;
+      }
       break;
 
     case CAT_MOTOR:
@@ -273,6 +363,18 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
     case CAT_GAME:
       if (cmd == CMD_GM_START_TRIAL) cmd_game_start_trial();
       else if (cmd == CMD_GM_CANCEL)  cmd_game_cancel();
+      break;
+    
+    case CAT_IRS:
+      switch (cmd) {
+        case CMD_IRS_START_CONT:
+            start_irs_continuous_task();
+            break;
+
+        case CMD_IRS_END_CONT:
+            stop_irs_continuous_task();
+            break;
+      }
       break;
 
     default:

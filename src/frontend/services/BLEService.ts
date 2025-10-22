@@ -65,6 +65,59 @@ class BLEService {
     const frame = Buffer.from(bytes).toString('base64');
     await this.controlChar.writeWithoutResponse(frame);
   }
+
+  eventChar: Characteristic | null = null;
+  notifySub: { remove?: () => void } | null = null;
+
+  // Subscribe to notifications from the EVTS characteristic
+  async enableNotifications(callback: (data: string) => void) {
+    if (!this.device) throw new Error('Not connected');
+
+    const chars = await this.device.characteristicsForService(SERVICE_UUID);
+    const evtChar = chars.find(c => c.uuid.toLowerCase() === EVTS_UUID);
+    if (!evtChar) throw new Error('Events characteristic not found');
+
+    this.eventChar = evtChar;
+
+    // Subscribe for notifications
+    this.notifySub = evtChar.monitor((error, characteristic) => {
+      if (error) {
+        console.error('BLE notify error:', error);
+        return;
+      }
+      if (characteristic?.value) {
+        callback(characteristic.value); // base64-encoded string
+      }
+    });
+
+    console.log('BLE notifications enabled for Events characteristic');
+  }
+
+  // Stop notifications (optional cleanup)
+  disableNotifications() {
+    if (this.notifySub) {
+      this.notifySub.remove?.();
+      this.notifySub = null;
+      console.log('BLE notifications disabled');
+    }
+  }
+
+  // Helper for React components
+  onNotify(callback: (data: string) => void) {
+    if (!this.eventChar) {
+      console.warn('No event characteristic yet — notifications not active');
+      return { remove: () => {} };
+    }
+    // Return the subscription handle
+    return this.eventChar.monitor((error, characteristic) => {
+      if (error) {
+        console.error('BLE notify error:', error);
+        return;
+      }
+      if (characteristic?.value) callback(characteristic.value);
+    });
+  }
+
 }
 
 export const bleService = new BLEService();

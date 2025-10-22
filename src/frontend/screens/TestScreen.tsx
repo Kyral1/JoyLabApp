@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useState, useEffect} from "react";
 import {View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Switch } from "react-native";
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
@@ -13,6 +13,9 @@ export default function TestScreen() {
     const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
     const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
     const [vibration, setVibration] = useState(false);
+    const [audio, setAudio] = useState(false);
+    const [irsOn, setIrsOn] = useState(false);
+    const [distance, setDistance] = useState(0);
     //Button Test States
     const [buttonTestActive, setButtonTestActive] = useState(false);
 
@@ -26,13 +29,23 @@ export default function TestScreen() {
         }
     };
 
+  useEffect(() => {
+    const subscription = bleService.enableNotifications((data: string) => {
+      const bytes = Buffer.from(data, 'base64');
+      if (bytes[0] === 0x90 && bytes.length >= 3) { // our IRS event code
+        const dist = bytes[1] | (bytes[2] << 8);
+        setDistance(dist);
+      }
+    });
+    return () => bleService.disableNotifications();
+  }, []);
+
     //LED Control Handlers
     //Toggle LED On/Off
     const handleToggleLED = (on:boolean) => {
         const idx = selectedLED === "All" ? 111 : parseInt(selectedLED) - 1;
         const { r, g, b } = currentColor;
         const br = Math.round(brightness * 100); //slider placement
-
         const frame = [0x01, 0x01, 0x05, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
         sendFrame(frame);
     }
@@ -55,11 +68,35 @@ export default function TestScreen() {
         sendFrame(frame);
     }
 
+    //Other Handlers
     //vibration toggle
     const handleVibrationToggle = (on: boolean) => {
       setVibration(on);
       const frame = [0x03, 0x01, 0x01, on ? 1: 0]
       sendFrame(frame)
+    }
+
+    //Audio Control Handler
+    const audioToggle = (on: boolean) => {
+      setAudio(on);
+      const frame = [0x02, 0x01, 0x01, on? 1:0];
+      sendFrame(frame);
+    }
+
+    //Audio Volume Handler
+    const handleVolumeChange = (val: number) => {
+      const scaled = Math.round(val * 100);
+      const frame = [0x02, 0x01, 0x02, scaled];
+      sendFrame(frame);
+    };
+
+    //IRS Toggle
+    const handleIRSToggle = (on: boolean) => {
+      setIrsOn(on);
+      const frame = [0x06, on? 0x01 : 0x02, 0x00];
+      sendFrame(frame);
+
+      if (!on) setDistance(0);
     }
 
     //button test handler
@@ -146,8 +183,55 @@ export default function TestScreen() {
             thumbColor="#fff"
           />
         </View>
-      </View>     
-    </ScrollView>
+      </View>
+
+      {/* Audio*/}
+      <View style={styles.card}>
+        <Text style={styles.sectionHeader}>Speaker Testing</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Audio</Text>
+          <Switch
+            value={vibration}
+            onValueChange={audioToggle}
+            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+            thumbColor="#fff"
+          />
+        </View>
+        <Text style={[styles.label, { marginTop: 20 }]}>Volume</Text>
+        <Slider
+          style={styles.slider}
+          value={brightness}
+          onValueChange={handleVolumeChange}
+          minimumValue={0}
+          maximumValue={1}
+          minimumTrackTintColor="#4A7FFB"
+          maximumTrackTintColor="#D6DBDF"
+        />
+      </View> 
+
+      {/* IRS Sensor */}
+      <View style={styles.card}>
+      <Text style={styles.sectionHeader}>Infrared Distance Sensor</Text>
+
+      <View style={styles.row}>
+        <Text style={styles.label}>IRS Streaming</Text>
+        <Switch
+          value={irsOn}
+          onValueChange={handleIRSToggle}
+          trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+          thumbColor="#fff"
+        />
+      </View>
+
+      {/* Distance Display */}
+      <View style={[styles.row, { marginTop: 10 }]}>
+        <Text style={styles.label}>Distance (mm):</Text>
+        <Text style={[styles.label, { fontWeight: "700", color: "#4A7FFB" }]}>
+          {distance}
+        </Text>
+      </View>
+    </View>
+  </ScrollView>
   );
 }
 
