@@ -95,3 +95,10 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+#GPIO Initialization: 
+LED Pins - DoStar.c
+Speaker Pins - Speaker_Control.h
+Vibration Motor Pins - VibrationMotor.h
+IR Sensor Pins - vl53l0x_i2c_platform.h
+Force Sensor Pins - I2C ports, check driver/i2c.h configurations online
