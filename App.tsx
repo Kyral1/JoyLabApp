@@ -1,12 +1,13 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { View, Text, StyleSheet, Button, Image } from "react-native";
+import { StyleSheet, Image } from "react-native";
 
 import HomeScreen from "./src/frontend/screens/HomeScreen";
 import SettingsScreen from "./src/frontend/screens/SettingsScreen";
 import StatisticsScreen from "./src/frontend/screens/StatisticsScreen";
-import GameModesScreen from "./src/frontend/screens/GameModesScreen";
+//import GameModesScreen from "./src/frontend/screens/GameModesScreen";
+import GameModesStack from "./src/frontend/navigation/GameModesStack";
 import TestScreen from "./src/frontend/screens/TestScreen";
 
 const Tab = createBottomTabNavigator();
@@ -47,7 +48,7 @@ export default function App() {
           }}
         />
 
-        <Tab.Screen
+        {/* <Tab.Screen
           name="Game Modes"
           component={GameModesScreen}
           options={{
@@ -57,6 +58,23 @@ export default function App() {
                 style={{ width: size, height: size, tintColor: color }}
               />
             ),
+          }}
+        /> */}
+
+        <Tab.Screen
+          name="Game Modes"
+          component={GameModesStack}
+          options={({ route }) => {
+            const rn = getFocusedRouteNameFromRoute(route) ?? "GameModesHome";
+            const hide = rn !== "GameModesHome";
+            return {
+              tabBarIcon: ({ color, size }) => (
+                <Image source={require("./src/frontend/components/game.png")}
+                       style={{ width: size, height: size, tintColor: color }} />
+              ),
+              tabBarStyle: hide ? { display: "none" } : undefined,
+              headerShown: false,
+            };
           }}
         />
 
