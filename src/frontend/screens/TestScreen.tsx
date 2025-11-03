@@ -18,6 +18,7 @@ export default function TestScreen() {
     const [distance, setDistance] = useState(0);
     const [forceOn, setForceOn] = useState(false);
     const [pressure, setPressure] = useState(0);
+    
     //Button Test States
     const [buttonTestActive, setButtonTestActive] = useState(false);
 

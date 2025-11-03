@@ -19,6 +19,7 @@ import { bleService } from '../services/BLEService';
 
   return (
     <View style={styles.container}>
+      <Text style={styles.header}>Settings</Text>
 
       {/* Toggles */}
       <View style={styles.card}>
@@ -113,12 +114,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     paddingTop: 40,
   },
-  header: {
-    fontSize: 28,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#4A7FFB',
-    marginBottom: 25,
+  header: { 
+    fontSize: 28, 
+    fontWeight: '700', 
+    color: '#2C3E50', 
+    marginBottom: 30 
   },
   card: {
     backgroundColor: '#FFFFFF',
