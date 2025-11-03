@@ -16,6 +16,7 @@
 #include "Speaker_Control.h"
 #include "IRS_Control.h"
 #include "ForceSensor_Control.h"
+#include "Game_Control.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -76,6 +77,9 @@ enum{
 enum{
     CMD_GA_START = 0x01, //payload: gameID
     CMD_GA_STOP = 0x02,  //payload: none
+    CMD_LED_MODE = 0x03,
+    CMD_SOUND_MODE = 0x04,
+    CMD_DUAL_MODE = 0x05,
 };
 
 //EVENTS (esp32 -> phone)
@@ -448,6 +452,16 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_FORCE_END_CONT:
           stop_force_continuous_task();
+          break;
+      }break;
+    
+    case CAT_GAME:
+      switch (cmd) {
+        case CMD_LED_MODE:
+          start_whackamole_game();
+          break;
+        case CMD_GA_STOP:
+          stop_whackamole_game();
           break;
       }break;
 

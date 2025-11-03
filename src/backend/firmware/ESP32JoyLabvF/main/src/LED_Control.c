@@ -54,3 +54,4 @@ void led_set_global_brightness(float brightness) {
 void led_show(void) {
     dotstar_show(led_buffer, NUM_LEDS);
 }
+

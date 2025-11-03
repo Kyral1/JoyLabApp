@@ -7,7 +7,7 @@
 static const char *TAG = "BUTTON";
 
 //Button Pins Mapping (change when ESP is configured)
-const int button_pins[NUM_BUTTONS] = {4, 5, 18, 19, 21};
+const int button_pins[NUM_BUTTONS] = {4, 5, 18, 19};
 
 //resets each pin before config
 void button_init_all(void) {
@@ -23,6 +23,10 @@ void button_init_all(void) {
 //checks if button is pressed
 bool button_is_pressed(int index) {
     if (index < 0 || index >= NUM_BUTTONS) return false;
-    int level = gpio_get_level(button_pins[index]);
-    return (level == 0);  // pressed = LOW
+
+    int first_read = gpio_get_level(button_pins[index]);
+    vTaskDelay(pdMS_TO_TICKS(DEBOUNCE_DELAY_MS));  // simple debounce
+    int second_read = gpio_get_level(button_pins[index]);
+
+    return (first_read == 0 && second_read == 0);
 }
