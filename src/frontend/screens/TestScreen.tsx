@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService'; 
+import { bleWristbandService } from '../services/BLEWristbandService';
 
 export default function TestScreen() {
     console.log("🧪 TestScreen loaded!");
@@ -31,6 +32,8 @@ export default function TestScreen() {
             console.error('Error sending frame:', e?.message ?? String(e));
         }
     };
+
+    //BLE wristband send frame
 
   useEffect(() => {
     const subscription = bleService.enableNotifications((data: string) => {
