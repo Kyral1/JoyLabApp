@@ -9,6 +9,16 @@ export default function SoundModeScreen() {
   //Constants
   const [selectedButton, setSelectedButton] = useState('All');
 
+  // BLE Frame Function 
+    const sendFrame = async (frame: number[]) => {
+        try{
+            await bleService.sendControlFrame(frame);
+            console.log("Frame sent:", frame);
+        } catch (e: any) {
+            console.error('Error sending frame:', e?.message ?? String(e));
+        }
+    };
+
   // Handle BLE notifications - if no notifications for sound can delete
   useEffect(() => {
           const sub = bleService.enableNotifications((data: string) => {
