@@ -19,8 +19,7 @@ import LinearGradient from 'react-native-linear-gradient'
   };
 
   //LED 
-  
-  const [selectedLED, setSelectedButton] = useState('All');
+  const [selectedButton, setSelectedButton] = useState('All');
   const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
   const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -36,7 +35,7 @@ import LinearGradient from 'react-native-linear-gradient'
   //LED Control Handlers
   //Toggle LED On/Off
   const handleToggleButton = (on:boolean) => {
-      const idx = selectedLED === "All" ? 111 : parseInt(selectedLED)-1;
+      const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
       const { r, g, b } = currentColor;
       const br = Math.round(brightness * 100); //slider placement
       const frame = [0x01, 0x01, 0x05, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
@@ -45,7 +44,7 @@ import LinearGradient from 'react-native-linear-gradient'
 
   //Change LED Color
   const handleChangeColor = (color: {r: number; g: number; b:number})=>{
-      const idx = selectedLED === "All" ? 111 : parseInt(selectedLED)-1;
+      const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
       const br = Math.round(brightness * 100);
       const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
       sendFrame(frame);
@@ -55,7 +54,7 @@ import LinearGradient from 'react-native-linear-gradient'
   const handleBrightnessChange = (val: number) => {
     setBrightness(val); //updates the state to remember the slider position
     const {r,g,b} = currentColor;
-    const idx = selectedLED  === "All" ? 111 : parseInt(selectedLED)-1;
+    const idx = selectedButton  === "All" ? 111 : parseInt(selectedButton)-1;
     const br = Math.round(val * 100);
     const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
     sendFrame(frame);
@@ -131,21 +130,21 @@ import LinearGradient from 'react-native-linear-gradient'
       <View style={styles.card}>
             <Text style={styles.sectionHeader}>Button Color Customizatioin</Text>
 
-            {/* LED Selector */}
-            <View style={styles.row}>
-                <Text style={styles.label}>Select Button:</Text>
-                <Picker
-                    selectedValue={selectedLED}
-                    style={styles.picker}
-                    onValueChange={(val) => setSelectedButton(val)}
-                >
-                    <Picker.Item label="All" value="All" />
-                    <Picker.Item label="Button 1" value="1" />
-                    <Picker.Item label="Button 2" value="2" />
-                    <Picker.Item label="Button 3" value="3" />
-                    <Picker.Item label="Button 4" value="4" />
-                </Picker>
-            </View>
+          {/* LED Selector */}
+          <View style={styles.row}>
+              <Text style={styles.label}>Select Button:</Text>
+              <Picker
+                  selectedValue={selectedButton}
+                  style={styles.picker}
+                  onValueChange={(val) => setSelectedButton(val)}
+              >
+                  <Picker.Item label="All" value="All" />
+                  <Picker.Item label="Button 1" value="1" />
+                  <Picker.Item label="Button 2" value="2" />
+                  <Picker.Item label="Button 3" value="3" />
+                  <Picker.Item label="Button 4" value="4" />
+              </Picker>
+          </View>
 
             {/* Toggle Buttons */}
             <View style={styles.row}>
@@ -324,73 +323,72 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 8,
   },
-    button: {
-        backgroundColor: "#C9D6FF",
-        borderRadius: 15,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        marginRight: 10,
-    },
-    buttonOff: {
-        backgroundColor: "#E6B0AA",
-        borderRadius: 15,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-    },
-    buttonText: {
-        color: "#2C3E50",
-        fontWeight: "600",
-    },
-    colorRow: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-        marginTop: 10,
-    },
-    colorBtn: {
-        width: 35,
-        height: 35,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: "#ccc",
-    },
-    picker: {
-        height: 90,
-        width: 140,
-    },
-    modalBackdrop: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.35)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalCard: {
-        width: '88%',
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 8,
-        color: '#2C3E50',
-    },
-    modalBtn: {
-        marginTop: 12,
-        alignSelf: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-    },
-    modalBtnText: {
-        color: '#007AFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
+  button: {
+    backgroundColor: "#C9D6FF",
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginRight: 10,
+  },
+  buttonOff: {
+    backgroundColor: "#E6B0AA",
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  buttonText: {
+    color: "#2C3E50",
+    fontWeight: "600",
+  },
+  colorRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 10,
+  },
+  colorBtn: {
+    width: 35,
+    height: 35,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+  picker: {
+    height: 90,
+    width: 140,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '88%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+    color: '#2C3E50',
+  },
+  modalBtn: {
+    marginTop: 12,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  modalBtnText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   sectionHeader: {
     fontSize: 20,
     fontWeight: '600',
     color: '#34495E',
     marginBottom: 10,
   },
-
 });

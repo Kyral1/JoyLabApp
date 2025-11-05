@@ -1,16 +1,92 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, {useState, useEffect} from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import Slider from '@react-native-community/slider';
+import {Picker} from '@react-native-picker/picker';
+import { Buffer } from 'buffer';
+import { bleService } from '../services/BLEService';
 
 export default function SoundModeScreen() {
+  //Constants
+  const [selectedButton, setSelectedButton] = useState('All');
+
+  // Handle BLE notifications - if no notifications for sound can delete
+  useEffect(() => {
+          const sub = bleService.enableNotifications((data: string) => {
+              const bytes = Buffer.from(data, 'base64');
+              if (bytes[0] === 0xA0) { 
+                  console.log("Sound notification:", bytes);
+                  // handle Speaker state updates here
+              }
+          });
+          return () => bleService.disableNotifications();
+      }, []);
+  
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>LED Mode</Text>
-      <Text>This is where your LED firmware controls will go.</Text>
-    </View>
+      <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.card}>
+            <Text style={styles.sectionHeader}>Sounds</Text>
+              {/* LED Selector */}
+              <View style={styles.row}>
+                  <Text style={styles.label}>Select Button:</Text>
+                      <Picker
+                        selectedValue={selectedButton}
+                        style={styles.picker}
+                        onValueChange={(val) => setSelectedButton(val)}
+                      >
+                      <Picker.Item label="All" value="All" />
+                      <Picker.Item label="Button 1" value="1" />
+                      <Picker.Item label="Button 2" value="2" />
+                      <Picker.Item label="Button 3" value="3" />
+                      <Picker.Item label="Button 4" value="4" />
+                  </Picker>
+              </View>
+          </View>
+      </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFF', padding: 24 },
-  header: { fontSize: 22, fontWeight: '700', color: '#2C3E50', marginBottom: 10 },
+  container: { 
+      flex: 1, 
+      backgroundColor: '#F9FAFF', 
+      paddingTop: 50, 
+      paddingHorizontal: 30 
+  },
+  header: { 
+      fontSize: 28, 
+      fontWeight: '700', 
+      color: '#2C3E50', 
+      marginBottom: 30 
+  },
+  sectionHeader: {
+      fontSize: 20,
+      fontWeight: "600",
+      marginBottom: 10,
+      color: "#2C3E50",
+  },
+  card: {
+      backgroundColor: "#FFFFFF",
+      borderRadius: 20,
+      padding: 20,
+      marginBottom: 25,
+      shadowColor: "#000",
+      shadowOpacity: 0.1,
+      shadowRadius: 6,
+      elevation: 3,
+  },
+  label: {
+    fontSize: 18,
+    color: '#2C3E50',
+    fontWeight: '500',
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 8,
+  },
+  picker: {
+    height: 90,
+    width: 140,
+  },
 });
