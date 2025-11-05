@@ -4,18 +4,9 @@ import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
-import ColorPicker from 'react-native-wheel-color-picker';
-import LinearGradient from 'react-native-linear-gradient'
 
-export default function LEDModeScreen() {
-    // LED States -- when the app is closed and reopened, it will reset to these default states
-    const [selectedLED, setSelectedButton] = useState('All');
-    const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
-    const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
-    const [pickerVisible, setPickerVisible] = useState(false);
-    const [selectedColor, setSelectedColor] = useState("#FFFFFF");
-    const [tempColor, setTempColor] = useState("#FFFFFF")
-    
+
+export default function LEDModeScreen() {    
     // Whack-A-Mole States
     const [gameRunning, setGameRunning] = useState(false);
     const [gameSpeed, setGameSpeed] = 
@@ -44,39 +35,6 @@ export default function LEDModeScreen() {
         });
         return () => bleService.disableNotifications();
     }, []);
-
-    const openPicker = () => {
-        setTempColor(selectedColor)
-        setPickerVisible(true);
-    };
-
-    // LED Control Handlers
-    // Toggle LED On/Off - will need to change for set of LEDS that form button
-    const handleToggleButton = (on:boolean) => {
-        const idx = selectedLED === "All" ? 111 : parseInt(selectedLED) - 1;
-        const { r, g, b } = currentColor;
-        const br = Math.round(brightness * 100); //slider placement
-        const frame = [0x01, 0x01, 0x05, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
-        sendFrame(frame);
-    }
-
-    // Change LED Color - will need to change for set of LEDS that form button
-    const handleChangeColor = (color: {r: number; g: number; b:number})=>{
-        const idx = selectedLED === "All" ? 111 : parseInt(selectedLED) - 1;
-        const br = Math.round(brightness * 100);
-        const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
-        sendFrame(frame);
-    }
-
-    // Change LED Brightness
-    const handleBrightnessChange = (val: number) => {
-        setBrightness(val); //updates the state to remember the slider position
-        const {r,g,b} = currentColor;
-        const idx = selectedLED  === "All" ? 111 : parseInt(selectedLED) - 1;
-        const br = Math.round(val * 100);
-        const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
-        sendFrame(frame);
-    }
 
     // Whack-A-Mole
     const lo = (n: number) => n & 0xff;
@@ -124,128 +82,8 @@ export default function LEDModeScreen() {
 
     return (
     <ScrollView contentContainerStyle={styles.container}>
-        {/* ========== LED SETTINGS SECTION ========== */}
         <View style={styles.card}>
-            <Text style={styles.sectionHeader}>LED Settings</Text>
-
-            {/* LED Selector */}
-            <View style={styles.row}>
-                <Text style={styles.label}>Select Button:</Text>
-                <Picker
-                    selectedValue={selectedLED}
-                    style={styles.picker}
-                    onValueChange={(val) => setSelectedButton(val)}
-                >
-                    <Picker.Item label="All" value="All" />
-                    <Picker.Item label="Button 1" value="1" />
-                    <Picker.Item label="Button 2" value="2" />
-                    <Picker.Item label="Button 3" value="3" />
-                    <Picker.Item label="Button 4" value="4" />
-                </Picker>
-            </View>
-
-            {/* Toggle Buttons */}
-            <View style={styles.row}>
-                <TouchableOpacity style={styles.button} onPress={() => handleToggleButton(true)}>
-                    <Text style={styles.buttonText}>Turn ON</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.buttonOff} onPress={() => handleToggleButton(false)}>
-                    <Text style={styles.buttonText}>Turn OFF</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Color Options */}
-            <Text style={[styles.label, { marginTop: 15 }]}>Change Color:</Text>
-            <View style={styles.colorRow}>
-                {[
-                    { name: "Red", color: "#E74C3C", rgb: { r: 255, g: 0, b: 0 } },
-                    { name: "Green", color: "#27AE60", rgb: { r: 0, g: 255, b: 0 } },
-                    { name: "Blue", color: "#2980B9", rgb: { r: 0, g: 0, b: 255 } },
-                    { name: "Yellow", color: "#F1C40F", rgb: { r: 255, g: 255, b: 0 } },
-                    { name: "White", color: "#FFFFFF", rgb: { r: 255, g: 255, b: 255 } },
-                ].map((c) => (
-                    <TouchableOpacity
-                        key={c.name}
-                        style={[styles.colorBtn, { backgroundColor: c.color }]}
-                        onPress={() => {
-                            setCurrentColor(c.rgb);  
-                            handleChangeColor(c.rgb); //change color + remember color
-                        }} 
-                    />
-                ))}
-
-                {/* Rainbow Button */}
-                <TouchableOpacity onPress={openPicker}>
-                    <LinearGradient
-                        colors={[
-                            "#FF0000",
-                            "#FF7F00",
-                            "#FFFF00",
-                            "#03cc03ff",
-                            "#0000FF",
-                            "#4B0082",
-                            "#8B00FF",
-                        ]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 0 }}
-                        style={styles.colorBtn}
-                    />
-                </TouchableOpacity>
-            </View>
-
-            <Modal visible={pickerVisible} animationType="slide" transparent>
-                <View style={styles.modalBackdrop}>
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>Pick a Color</Text>
-
-                        <ColorPicker
-                            color={tempColor}
-                            onColorChangeComplete={(hex) => setTempColor(hex)}
-                            thumbSize={28}
-                            sliderSize={24}
-                            noSnap
-                            row={false}
-                        />
-
-                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 16, marginTop: 14 }}>
-                            <TouchableOpacity onPress={() => setPickerVisible(false)}>
-                                <Text style={styles.modalBtnText}>Cancel</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={() => {
-                                    setSelectedColor(tempColor);
-                                    const r = parseInt(tempColor.slice(1,3), 16);
-                                    const g = parseInt(tempColor.slice(3,5), 16);
-                                    const b = parseInt(tempColor.slice(5,7), 16);
-                                    setPickerVisible(false);
-                                    setCurrentColor({ r, g, b });
-                                    handleChangeColor({ r, g, b });
-                                }}
-                            >
-                                <Text style={[styles.modalBtnText, { fontWeight: '700' }]}>Apply</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
-
-
-            {/* Brightness */}
-            <Text style={[styles.label, { marginTop: 20 }]}>Brightness</Text>
-            <Slider
-                style={styles.slider}
-                value={brightness}
-                onValueChange={handleBrightnessChange}
-                minimumValue={0}
-                maximumValue={1}
-                minimumTrackTintColor="#4A7FFB"
-                maximumTrackTintColor="#D6DBDF"
-            />
-        </View>
-
-        <View style={styles.card}>
-            <Text style={styles.sectionHeader}>Whack-A-Mole</Text>
+            <Text style={styles.sectionHeader}>LED Whack-A-Mole</Text>
 
             {/* Speed mode */}
             <View style={styles.row}>

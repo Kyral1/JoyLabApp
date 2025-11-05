@@ -4,16 +4,15 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-//LEDs to Button Config
-static const int led_start_for_button[NUM_BUTTONS] = {0, 18, 36, 54};  // Adjust once mapping decided
-static const int leds_per_button = 18;
+#include "esp_random.h"
+#include "Bluetooth.h"
 
 static TaskHandle_t game_task_handle = NULL;
 static bool game_running = false;
+static const char *TAG = "GAME_CONTROL";
 
 static void whackamole_game_task(void *pvParameters) {
-    ensure_led_ready();   // from LED_Control.c
+    ensure_led_ready();   // from bluetooth.c
     button_init_all();    // from Button_Control.c
 
     ESP_LOGI(TAG, "Starting Whack-A-Mole game!");
@@ -23,11 +22,11 @@ static void whackamole_game_task(void *pvParameters) {
         // Choose a random button 0–3
         int target = esp_random() % NUM_BUTTONS;
 
-        // Turn on LEDs for that button
-        for (int i = 0; i < leds_per_button; i++) {
-            int led_idx = led_start_for_button[target] + i;
-            led_set_color_brightness(led_idx, 255, 0, 0, 0.5f); // red, 50% brightness
-        }
+        //get button state
+        ButtonColor state = get_button_state(target);
+
+        //light up button:
+        set_button_color(target + 1, state.r, state.g, state.b, state.brightness);
         led_show();
 
         // Wait for correct button press
@@ -35,9 +34,7 @@ static void whackamole_game_task(void *pvParameters) {
             if (button_is_pressed(target)) {
                 ESP_LOGI(TAG, "Button %d hit!", target);
                 // Turn off LEDs for that button
-                for (int i = 0; i < leds_per_button; i++) {
-                    led_clear_one(led_start_for_button[target] + i);
-                }
+                set_button_color(target, 0, 0, 0, 0.0f);
                 led_show();
                 vTaskDelay(pdMS_TO_TICKS(250)); // small pause
                 break; // move to next round
@@ -47,7 +44,7 @@ static void whackamole_game_task(void *pvParameters) {
     }
 
     // Cleanup when game stops
-    led_clear_all();
+    led_clear();
     led_show();
     ESP_LOGI(TAG, "Whack-A-Mole stopped.");
     vTaskDelete(NULL);

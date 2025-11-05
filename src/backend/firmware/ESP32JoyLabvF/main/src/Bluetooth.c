@@ -167,7 +167,7 @@ static inline void start_advertising(void) {
     ESP_LOGI(TAG, "Started advertising");
 }
 
-static void ensure_led_ready(void){
+void ensure_led_ready(void){
     if (!s.led_ready) {led_init(); s.led_ready = true;}
 }
 
@@ -274,11 +274,13 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
   ensure_led_ready();
   float br = (float)br_pct / 100.0f;
   if(idx == 111){
-    for(int i = 0; i<72; i++){
-      led_set_color_brightness(i, r, g, b, br);
+    set_button_color(idx, r, g, b, br);
+    for (int i = 0; i <= 3; i++){
+        save_button_state(i, r, g, b, br);
     }
-  }else{
-      led_set_color_brightness(idx, r, g, b, br);
+  }else if (idx <4){
+    set_button_color(idx, r, g, b, br);
+    save_button_state(idx, r, g, b, br);
   }
   led_show();
 }
@@ -426,11 +428,6 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
 
     case CAT_MOTOR:
       if (cmd == CMD_MO_SET_STATE && len >= 1) cmd_motor_set_state(pl[0]);
-      break;
-
-    case CAT_GAME:
-      if (cmd == CMD_GM_START_TRIAL) cmd_game_start_trial();
-      else if (cmd == CMD_GM_CANCEL)  cmd_game_cancel();
       break;
     
     case CAT_IRS:

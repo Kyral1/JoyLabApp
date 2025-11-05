@@ -7,4 +7,3 @@
 void start_whackamole_game(void);
 void stop_whackamole_game(void);
 
-#endif

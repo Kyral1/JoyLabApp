@@ -7,6 +7,7 @@ idf_component_register(
         "vl53l0x/VL53L0X_1.0.4/Api/platform/src/vl53l0x_i2c_platform.c"
         "vl53l0x/VL53L0X_1.0.4/Api/platform/src/vl53l0x_platform.c"
         "vl53l0x/VL53L0X_1.0.4/Api/platform/src/vl53l0x_platform_log.c"
+        "src/Game_Control.c" 
     INCLUDE_DIRS "include" "vl53l0x/VL53L0X_1.0.4/Api/core/inc" "vl53l0x/VL53L0X_1.0.4/Api/platform/inc"
     REQUIRES driver nvs_flash esp_timer bt esp_system 
 )

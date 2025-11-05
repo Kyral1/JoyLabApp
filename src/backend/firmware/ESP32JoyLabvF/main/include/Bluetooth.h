@@ -1,5 +1,6 @@
 #ifndef BLUETOOTH_H
 #define BLUETOOTH_H
+#pragma once
 
 #include "esp_err.h"
 #include "esp_gatts_api.h"
@@ -8,7 +9,6 @@
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
 #include "esp_bt_main.h"
-
 #include <stdint.h>
 
 
@@ -33,8 +33,9 @@ esp_err_t bluetooth_init(void);
 // Deinitializes BLE and stops advertising (optional for shutdown/restart).
 void bluetooth_deinit(void);
 
+void ensure_led_ready(void);
+
 #ifdef __cplusplus
 }
 #endif
-
 #endif // BLUETOOTH_H

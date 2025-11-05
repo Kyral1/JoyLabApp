@@ -2,9 +2,12 @@
 #include "driver/gpio.h"
 #include "Button_Control.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 //log tag
 static const char *TAG = "BUTTON";
+#define DEBOUNCE_DELAY_MS 50
 
 //Button Pins Mapping (change when ESP is configured)
 const int button_pins[NUM_BUTTONS] = {4, 5, 18, 19};
