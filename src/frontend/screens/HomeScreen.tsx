@@ -2,27 +2,42 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert, Pressable, TouchableOpacity, Modal} from 'react-native';
 import { bleService } from '../services/BLEService';
-
+import { bleWristbandService } from '../services/BLEWristbandService';
 
 export default function HomeScreen() {
   console.log("🎮 HomeScreen loaded!");
-  const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [toyConnected, setToyConnected] = useState(false);
+  const [bandConnected, setBandConnected] = useState(false);
+  const [connectingToy, setConnectingToy] = useState(false);
+  const [connectingBand, setConnectingBand] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
   // Connect to the device using shared BLE service
-  const handleConnect = async () => {
+  const handleConnectToy = async () => {
     try {
-      setConnecting(true);
+      setConnectingToy(true);
       await bleService.connect();
-      setConnected(true);
+      setToyConnected(true);
       Alert.alert('BLE', 'Connected to JoyLabToy ✅');
     } catch (e: any) {
       Alert.alert('BLE Error', e?.message ?? String(e));
     } finally {
-      setConnecting(false);
+      setConnectingToy(false);
     }
   };
+
+  const handleConnectBand = async () => {
+    try{
+      setConnectingBand(true);
+      await bleWristbandService.connect();
+      setBandConnected(true);
+      Alert.alert('BLE', 'Connected to JoyLab WristBand ✅');
+    } catch (e: any){
+      Alert.alert('BLE Error', e?.message ?? String(e));
+    } finally {
+      setConnectingBand(false);
+    }
+  }
 
 return (
     <View style={styles.container}>
@@ -35,12 +50,22 @@ return (
 
       {/* Buttons */}
       <TouchableOpacity
-        style={[styles.button, connected && { backgroundColor: '#A5D6A7' }]}
-        onPress={handleConnect}
-        disabled={connecting || connected}
+        style={[styles.button, toyConnected && { backgroundColor: '#A5D6A7' }]}
+        onPress={handleConnectToy}
+        disabled={connectingToy || toyConnected}
       >
         <Text style={styles.buttonText}>
-          {connecting ? 'Connecting...' : connected ? 'Connected ✅' : 'Connect Devices'}
+          {connectingToy ? 'Connecting...' : toyConnected ? 'Connected ✅' : 'Connect JoyLab Toy'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, bandConnected && { backgroundColor: '#A5D6A7' }]}
+        onPress={handleConnectBand}
+        disabled={connectingBand || bandConnected}
+      >
+        <Text style={styles.buttonText}>
+          {connectingBand ? 'Connecting...' : bandConnected ? 'Connected ✅' : 'Connect JoyLab WristBand'}
         </Text>
       </TouchableOpacity>
 
