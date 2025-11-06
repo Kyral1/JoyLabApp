@@ -294,7 +294,13 @@ static void cmd_led_set_mode(uint8_t mode) {
 static void cmd_audio_set_state(uint8_t on){
   ensure_speaker_ready();  // ensure pin is ready
   bool state = (on > 0);
-  speaker_set_state(state);
+  static uint8_t last_volume = 50;
+  if (state){
+    speaker_set_volume(last_volume);
+  }else{ //muting to turn off
+    last_volume = speaker_get_volume();
+    speaker_mute();
+  }
   ESP_LOGI(TAG, "BLE Speaker toggle: %s", state ? "ON" : "OFF");
 }
 

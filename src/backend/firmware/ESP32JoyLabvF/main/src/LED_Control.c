@@ -18,6 +18,13 @@ static ButtonColor button_states[NUM_BUTTONS] = {
     {255, 255, 255, 1.0f},
 };
 
+static const int buttonLEDs[4][8] = {
+    {0,1,2,3,4,-1},
+    {10,11,12,13,14,-1},
+    {20,21,22,23,24,-1},
+    {30,31,32,33,34,-1},
+};
+
 void save_button_state(int button, uint8_t r, uint8_t g, uint8_t b, float brightness) {
     if (button < 0 || button > 3) return;
     button_states[button] = (ButtonColor){r, g, b, brightness};
@@ -85,11 +92,10 @@ void set_button_color(int button_num, uint8_t r, uint8_t g, uint8_t b, float bri
     return;
     }
 
-    int leds_per_button = 10;
-    int start = (button_num) * leds_per_button;
+    const int *led_list = buttonLEDs[button_num];
 
-    for (int i = start; i < start + leds_per_button; i++) {
-        led_set_color_brightness(i, r, g, b, brightness);
+    for (int i = 0; led_list[i]!=-1; i++) {
+        led_set_color_brightness(led_list[i], r, g, b, brightness);
     }
 }
 

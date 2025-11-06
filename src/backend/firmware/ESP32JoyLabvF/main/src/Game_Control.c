@@ -10,6 +10,7 @@
 static TaskHandle_t game_task_handle = NULL;
 static bool game_running = false;
 static const char *TAG = "GAME_CONTROL";
+static int led_mode_points = 0;
 
 static void whackamole_game_task(void *pvParameters) {
     ensure_led_ready();   // from bluetooth.c
@@ -32,6 +33,7 @@ static void whackamole_game_task(void *pvParameters) {
         // Wait for correct button press
         while (game_running) {
             if (button_is_pressed(target)) {
+                led_mode_points ++;
                 ESP_LOGI(TAG, "Button %d hit!", target);
                 // Turn off LEDs for that button
                 set_button_color(target, 0, 0, 0, 0.0f);
@@ -65,6 +67,7 @@ void start_whackamole_game(void) {
     } else {
         ESP_LOGW(TAG, "Whack-A-Mole already running.");
     }
+    led_mode_points = 0;
 }
 
 void stop_whackamole_game(void) {

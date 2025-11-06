@@ -26,6 +26,7 @@ import LinearGradient from 'react-native-linear-gradient'
   const [pickerVisible, setPickerVisible] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#FFFFFF");
   const [tempColor, setTempColor] = useState("#FFFFFF")
+  const [audio, setAudio] = useState(false);
   console.log("⚙️ SettingsScreen loaded!");
 
   const openPicker = () => {
@@ -60,6 +61,20 @@ import LinearGradient from 'react-native-linear-gradient'
     const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
     sendFrame(frame);
   }
+
+  //audio handlers
+      const audioToggle = (on: boolean) => {
+      setAudio(on);
+      const frame = [0x02, 0x01, 0x01, on? 1:0];
+      sendFrame(frame);
+    }
+
+    //Audio Volume Handler
+    const handleVolumeChange = (val: number) => {
+      const scaled = Math.round(val * 100);
+      const frame = [0x02, 0x02, 0x01, scaled];
+      sendFrame(frame);
+    };
 
   // --- Toggle states (placeholders)
   const [vibration, setVibration] = useState(true);
@@ -246,43 +261,35 @@ import LinearGradient from 'react-native-linear-gradient'
                 maximumTrackTintColor="#D6DBDF"
             />
         </View>
-
-      {/* Sliders */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Volume</Text>
-        <Slider
-          style={styles.slider}
-          value={volume}
-          onValueChange={setVolume}
-          minimumValue={0}
-          maximumValue={1}
-          minimumTrackTintColor="#4A7FFB"
-          maximumTrackTintColor="#D6DBDF"
-        />
-
-        <Text style={[styles.label, { marginTop: 15 }]}>Brightness</Text>
-        <Slider
-          style={styles.slider}
-          value={brightness}
-          onValueChange={(val) => {
-            setBrightness(val);
-            const scaled = Math.round(val * 100); // 0–100 brightness
-            const frame = [0x01, 0x03, 0x01, scaled]; // CAT=1, CMD=3
-            bleService.sendControlFrame(frame);
-          }}
-          minimumValue={0}
-          maximumValue={1}
-          minimumTrackTintColor="#4A7FFB"
-          maximumTrackTintColor="#D6DBDF"
-        />
-      </View>
+        <View style={styles.card}>
+              <Text style={styles.sectionHeader}>Audio Control</Text>
+              <View style={styles.row}>
+                <Text style={styles.label}>Audio</Text>
+                <Switch
+                  value={audio}
+                  onValueChange={audioToggle}
+                  trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+                  thumbColor="#fff"
+                />
+              </View>
+              <Text style={[styles.label, { marginTop: 20 }]}>Volume</Text>
+              <Slider
+                style={styles.slider}
+                value={brightness}
+                onValueChange={handleVolumeChange}
+                minimumValue={0}
+                maximumValue={1}
+                minimumTrackTintColor="#4A7FFB"
+                maximumTrackTintColor="#D6DBDF"
+              />
+        </View> 
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F9FAFF',
     paddingHorizontal: 25,
     paddingTop: 40,
