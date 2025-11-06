@@ -48,19 +48,6 @@ export default function App() {
           }}
         />
 
-        {/* <Tab.Screen
-          name="Game Modes"
-          component={GameModesScreen}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <Image
-                source={require("./src/frontend/components/game.png")}
-                style={{ width: size, height: size, tintColor: color }}
-              />
-            ),
-          }}
-        /> */}
-
         <Tab.Screen
           name="Game Modes"
           component={GameModesStack}
