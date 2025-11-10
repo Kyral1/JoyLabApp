@@ -13,7 +13,7 @@ void force_sensor_init(void) {
     .mode = I2C_MODE_MASTER,
     .sda_io_num = SDA_PIN,         // select GPIO specific to your project
     .sda_pullup_en = GPIO_PULLUP_ENABLE,
-    .scl_io_num = SLC_PIN,         // select GPIO specific to your project
+    .scl_io_num = SCL_PIN,         // select GPIO specific to your project
     .scl_pullup_en = GPIO_PULLUP_ENABLE,
     .master.clk_speed = 100000 //100kHz -- standard
     // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */

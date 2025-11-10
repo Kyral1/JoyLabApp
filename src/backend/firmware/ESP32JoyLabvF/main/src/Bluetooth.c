@@ -71,6 +71,7 @@ enum{
 //commands - MOTOR
 enum{
     CMD_MO_SET_STATE = 0x01, //payload: intensity 0-100
+    CMD_MO_SET_INTENSITY = 0x02
 };
 
 //commands - GAME
@@ -174,11 +175,11 @@ void ensure_led_ready(void){
 }
 
 static void ensure_motor01_ready(void){
-  if(!s.motor01_ready){vibration_init(VIBRATION_01_GPIO); s.motor01_ready = true;}
+  if(!s.motor01_ready){vibration_init(); s.motor01_ready = true;}
 }
 
 static void ensure_motor02_ready(void){
-  if(!s.motor02_ready){vibration_init(VIBRATION_02_GPIO); s.motor02_ready = true;}
+  if(!s.motor02_ready){vibration_init(); s.motor02_ready = true;}
 }
 
 
@@ -317,13 +318,35 @@ static void cmd_audio_set_volume(uint8_t vol) {
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
-static void cmd_motor_set_state(uint8_t on, gpio_num_t pin) {
-  ensure_motor01_ready();
-  ensure_motor02_ready();
-  bool state = (on >0);
-  vibration_set_state(state, VIBRATION_01_GPIO);
-  vibration_set_state(state, VIBRATION_02_GPIO);
-  ESP_LOGI(TAG, "BLE Motor toggle: %s", state ? "ON" : "OFF");
+static void cmd_motor_set_state(uint8_t motor_id, uint8_t on) {
+    ensure_motor01_ready();
+    ensure_motor02_ready();
+    bool state = (on > 0);
+
+    if (motor_id == 1) {
+        vibration_set_state_motor1(state);
+        ESP_LOGI(TAG, "Motor 1 %s", state ? "ON" : "OFF");
+    } else if (motor_id == 2) {
+        vibration_set_state_motor2(state);
+        ESP_LOGI(TAG, "Motor 2 %s", state ? "ON" : "OFF");
+    } else {
+        ESP_LOGW(TAG, "Unknown motor ID: %d", motor_id);
+    }
+}
+
+static void cmd_motor_set_intensity(uint8_t motor_id, uint8_t intensity) {
+    ensure_motor01_ready();
+    ensure_motor02_ready();
+
+    if (motor_id == 1) {
+        vibration_set_intensity_motor1(intensity);
+        ESP_LOGI(TAG, "Motor 1 intensity %d%%", intensity);
+    } else if (motor_id == 2) {
+        vibration_set_intensity_motor2(intensity);
+        ESP_LOGI(TAG, "Motor 2 intensity %d%%", intensity);
+    } else {
+        ESP_LOGW(TAG, "Unknown motor ID: %d", motor_id);
+    }
 }
 
 static void irs_continuous_task(void *pvParameters) {
@@ -442,7 +465,17 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       break;
 
     case CAT_MOTOR:
-      if (cmd == CMD_MO_SET_STATE && len >= 1) cmd_motor_set_state(pl[0]);
+      switch (cmd) {
+        case CMD_MO_SET_STATE:
+          if (len >= 2) cmd_motor_set_state(pl[0], pl[1]);  // [motor_id, on/off]
+          break;
+        case CMD_MO_SET_INTENSITY:
+          if (len >= 2) cmd_motor_set_intensity(pl[0], pl[1]); // [motor_id, intensity]
+          break;
+        default:
+          ESP_LOGW(TAG, "Unknown motor cmd: 0x%02X", cmd);
+          break;
+      }
       break;
     
     case CAT_IRS:

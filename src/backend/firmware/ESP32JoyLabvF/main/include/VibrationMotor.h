@@ -2,10 +2,12 @@
 #include <stdbool.h>
 #include "driver/gpio.h"
 
-#define VIBRATION_01_GPIO 16
-#define VIBRATION_02_GPIO 17
+void vibration_init(void);
 
-//functions
-void vibration_init(gpio_num_t pin);
-void vibration_set_state(bool on, gpio_num_t pin);
-bool vibration_get_state(void);
+// Motor 1 controls
+void vibration_set_state_motor1(bool on);
+void vibration_set_intensity_motor1(uint8_t intensity);
+
+// Motor 2 controls
+void vibration_set_state_motor2(bool on);
+void vibration_set_intensity_motor2(uint8_t intensity);

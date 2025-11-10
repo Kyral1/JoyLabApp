@@ -14,6 +14,7 @@ export default function TestScreen() {
     const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
     const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
     const [vibration, setVibration] = useState(false);
+    const [motorIntensity, setMotorIntensity] = useState(0.5);
     const [audio, setAudio] = useState(false);
     const [irsOn, setIrsOn] = useState(false);
     const [distance, setDistance] = useState(0);
@@ -78,9 +79,22 @@ export default function TestScreen() {
     //vibration toggle
     const handleVibrationToggle = (on: boolean) => {
       setVibration(on);
-      const frame = [0x03, 0x01, 0x01, on ? 1: 0]
-      sendFrame(frame)
+      const frame1 = [0x03, 0x01, 0x02, 0x01, on ? 1 : 0];
+      const frame2 = [0x03, 0x01, 0x02, 0x02, on ? 1 : 0];
+      sendFrame(frame1)
+      sendFrame(frame2)
     }
+
+    const handleMotorIntensity = (val: number) => {
+      setMotorIntensity(val);
+      const scaled = Math.round(val * 100);
+      // CAT=0x03 (MOTOR), CMD_MO_SET_INTENSITY=0x02, len=2, payload=[motor_id, intensity]
+      // Update both motors with the same intensity
+      const frame1 = [0x03, 0x02, 0x02, 0x01, scaled];
+      const frame2 = [0x03, 0x02, 0x02, 0x02, scaled];
+      sendFrame(frame1);
+      sendFrame(frame2);
+    };
 
     //Audio Control Handler
     const audioToggle = (on: boolean) => {
@@ -186,18 +200,32 @@ export default function TestScreen() {
       </View>
 
       {/* Vibration Motor */}
-      <View style={styles.card}>
-        <Text style={styles.sectionHeader}>Vibration Motor Test 1 & 2</Text>
-        <View style={styles.row}>
-          <Text style={styles.label}>Vibration</Text>
-          <Switch
-            value={vibration}
-            onValueChange={handleVibrationToggle}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
+<View style={styles.card}>
+  <Text style={styles.sectionHeader}>Vibration Motors (Both)</Text>
+
+  {/* ON/OFF Toggle */}
+  <View style={styles.row}>
+    <Text style={styles.label}>Motors Power</Text>
+    <Switch
+      value={vibration}
+      onValueChange={handleVibrationToggle}
+      trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
+      thumbColor="#fff"
+    />
+  </View>
+
+  {/* Intensity Slider */}
+  <Text style={[styles.label, { marginTop: 15 }]}>Vibration Intensity</Text>
+  <Slider
+    style={styles.slider}
+    value={motorIntensity}
+    onValueChange={handleMotorIntensity}
+    minimumValue={0}
+    maximumValue={1}
+    minimumTrackTintColor="#4A7FFB"
+    maximumTrackTintColor="#D6DBDF"
+  />
+</View>
 
       {/* Audio*/}
       <View style={styles.card}>
