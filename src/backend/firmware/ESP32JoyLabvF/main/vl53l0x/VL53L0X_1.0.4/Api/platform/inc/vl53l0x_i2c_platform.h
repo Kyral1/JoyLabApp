@@ -33,8 +33,8 @@ extern "C" {
 #include <stdarg.h>
 
 #define CONFIG_VL53L0X_I2C_NUM I2C_NUM_0
-#define CONFIG_VL53L0X_SDA_PIN 21
-#define CONFIG_VL53L0X_SCL_PIN 22
+#define CONFIG_VL53L0X_SDA_PIN 23
+#define CONFIG_VL53L0X_SCL_PIN 13
 
 /**
  *  @brief Typedef defining .\n

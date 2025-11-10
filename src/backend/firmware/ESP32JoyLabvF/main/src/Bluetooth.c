@@ -104,7 +104,8 @@ typedef struct {
   uint16_t      h_evts;
   joy_settings_t settings;
   bool          led_ready;      // init LED driver once
-  bool          motor_ready;
+  bool          motor01_ready;
+  bool          motor02_ready;
   bool          speaker_ready;
   bool          irs_ready;
   bool          force_ready;
@@ -119,7 +120,8 @@ static ble_ctx_t s = {
   .h_evts = 0,
   .settings = { .LED_mode = 1, .volume = 60, .brightness = 100 },
   .led_ready = false,
-  .motor_ready = false,
+  .motor01_ready = false,
+  .motor02_ready = false,
   .speaker_ready = false,
   .irs_ready = false,
   .force_ready = false,
@@ -171,9 +173,14 @@ void ensure_led_ready(void){
     if (!s.led_ready) {led_init(); s.led_ready = true;}
 }
 
-static void ensure_motor_ready(void){
-  if(!s.motor_ready){vibration_init(); s.motor_ready = true;}
+static void ensure_motor01_ready(void){
+  if(!s.motor01_ready){vibration_init(VIBRATION_01_GPIO); s.motor01_ready = true;}
 }
+
+static void ensure_motor02_ready(void){
+  if(!s.motor02_ready){vibration_init(VIBRATION_02_GPIO); s.motor02_ready = true;}
+}
+
 
 static void ensure_speaker_ready(void){
   if(!s.speaker_ready){speaker_init(); s.speaker_ready = true;}
@@ -310,10 +317,12 @@ static void cmd_audio_set_volume(uint8_t vol) {
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
-static void cmd_motor_set_state(uint8_t on) {
-  ensure_motor_ready();
+static void cmd_motor_set_state(uint8_t on, gpio_num_t pin) {
+  ensure_motor01_ready();
+  ensure_motor02_ready();
   bool state = (on >0);
-  vibration_set_state(state);
+  vibration_set_state(state, VIBRATION_01_GPIO);
+  vibration_set_state(state, VIBRATION_02_GPIO);
   ESP_LOGI(TAG, "BLE Motor toggle: %s", state ? "ON" : "OFF");
 }
 

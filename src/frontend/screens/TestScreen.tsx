@@ -187,7 +187,7 @@ export default function TestScreen() {
 
       {/* Vibration Motor */}
       <View style={styles.card}>
-        <Text style={styles.sectionHeader}>Vibration Motor Test</Text>
+        <Text style={styles.sectionHeader}>Vibration Motor Test 1 & 2</Text>
         <View style={styles.row}>
           <Text style={styles.label}>Vibration</Text>
           <Switch
