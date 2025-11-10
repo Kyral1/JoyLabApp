@@ -75,12 +75,6 @@ import LinearGradient from 'react-native-linear-gradient'
       sendFrame(frame);
     };
 
-  // --- Toggle states (placeholders)
-  const [vibration, setVibration] = useState(true);
-  const [setting1, setSetting1] = useState(false);
-  const [setting2, setSetting2] = useState(false);
-  const [setting3, setSetting3] = useState(true);
-  const [setting4, setSetting4] = useState(false);
 
   // --- Slider states
   const [volume, setVolume] = useState(0.6);
@@ -88,59 +82,6 @@ import LinearGradient from 'react-native-linear-gradient'
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Settings</Text>
-
-      {/* Toggles */}
-      <View style={styles.card}>
-        <View style={styles.settingRow}>
-          <Text style={styles.label}>Vibration</Text>
-          <Switch
-            value={vibration}
-            onValueChange={setVibration}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Text style={styles.label}>Setting 1</Text>
-          <Switch
-            value={setting1}
-            onValueChange={setSetting1}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Text style={styles.label}>Setting 2</Text>
-          <Switch
-            value={setting2}
-            onValueChange={setSetting2}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Text style={styles.label}>Setting 3</Text>
-          <Switch
-            value={setting3}
-            onValueChange={setSetting3}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Text style={styles.label}>Setting 4</Text>
-          <Switch
-            value={setting4}
-            onValueChange={setSetting4}
-            trackColor={{ false: '#D6DBDF', true: '#4A7FFB' }}
-            thumbColor="#fff"
-          />
-        </View>
-      </View>
 
       <View style={styles.card}>
             <Text style={styles.sectionHeader}>Button Color Customizatioin</Text>
