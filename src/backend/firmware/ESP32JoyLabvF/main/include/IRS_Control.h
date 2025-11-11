@@ -9,3 +9,4 @@ void irs_init(void);
 
 // Reads the current distance measurement in millimeters
 uint16_t irs_read_distance_mm(void);
+bool irs_is_hand_near(void);

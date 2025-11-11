@@ -25,10 +25,14 @@ export default function LEDModeScreen() {
     // Handle BLE notifications - if no notifications for LED can delete
     useEffect(() => {
         const sub = bleService.enableNotifications((data: string) => {
-            const bytes = Buffer.from(data, 'base64');
-            if (bytes[0] === 0xA0) { 
-                console.log("Game Update:", bytes);
-                // handle LED state updates here
+          const bytes = Buffer.from(data, 'base64');
+          const eventCode = bytes[0];
+          if (eventCode === 0x82) { 
+            const newPoints = bytes[1];
+            const newAttempts = bytes[2];
+            setPoints(newPoints);
+            setAttempts(newAttempts);
+            console.log("Game Update:", bytes);
             }
         });
         return () => bleService.disableNotifications();
@@ -37,8 +41,6 @@ export default function LEDModeScreen() {
     // Whack-A-Mole
     const startWhackGame = async () => {
         await sendFrame([0x04, 0x03, 0x00]); // example CMD: start
-        setPoints(0);
-        setAttempts(0);
         setGameRunning(true);
     };
 

@@ -5,6 +5,7 @@
 
 static const char *TAG = "IRS_CONTROL";
 static VL53L0X_Dev_t sensor;
+#define PROXIMITY_THRESHOLD_MM 100  // Adjust this for sensitivity (e.g., 50–150mm)
 
 void irs_init(void) {
     ESP_LOGI(TAG, "Initializing VL53L0X...");
@@ -23,4 +24,16 @@ uint16_t irs_read_distance_mm(void) {
     ESP_LOGI(TAG, "Distance: %d mm", measure.RangeMilliMeter);
     VL53L0X_ClearInterruptMask(&sensor, 0);
     return measure.RangeMilliMeter;
+}
+
+bool irs_is_hand_near(void) {
+    VL53L0X_RangingMeasurementData_t measure;
+    VL53L0X_GetRangingMeasurementData(&sensor, &measure);
+
+    if (measure.RangeStatus == 0 && measure.RangeMilliMeter < PROXIMITY_THRESHOLD_MM) {
+        VL53L0X_ClearInterruptMask(&sensor, 0);
+        return true;
+    }
+    VL53L0X_ClearInterruptMask(&sensor, 0);
+    return false;
 }
