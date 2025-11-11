@@ -8,7 +8,7 @@ static VL53L0X_Dev_t sensor;
 
 void irs_init(void) {
     ESP_LOGI(TAG, "Initializing VL53L0X...");
-    sensor.I2cDevAddr = 0x52;
+    sensor.I2cDevAddr = 0x29;
     VL53L0X_DataInit(&sensor);
     VL53L0X_StaticInit(&sensor);
     VL53L0X_PerformRefCalibration(&sensor, NULL, NULL);
