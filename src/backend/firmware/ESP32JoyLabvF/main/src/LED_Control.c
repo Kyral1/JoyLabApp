@@ -2,6 +2,8 @@
 #include "dotstar.h"
 #include "esp_log.h"
 #include <string.h>
+#include "nvs_flash.h"
+#include "nvs.h"
 
 #define NUM_LEDS 72
 #define NUM_BUTTONS 4
@@ -18,16 +20,34 @@ static ButtonColor button_states[NUM_BUTTONS] = {
     {255, 255, 255, 1.0f},
 };
 
-static const int buttonLEDs[4][8] = {
-    {0,1,2,3,4,-1},
-    {10,11,12,13,14,-1},
-    {20,21,22,23,24,-1},
-    {30,31,32,33,34,-1},
+static ButtonColor button_colors[NUM_BUTTONS]={
+    {255, 255, 255, 1.0f},  
+    {255, 255, 255, 1.0f},
+    {255, 255, 255, 1.0f},
+    {255, 255, 255, 1.0f},
+};
+
+static const int buttonLEDs[4][9] = {
+    {0, 1, 2, 3, 4, 5, 6, 7, -1},       // Button 0
+    {8, 9, 10, 11, 12, 13, 14, 15, -1}, // Button 1
+    {16, 17, 18, 19, 20, 21, 22, 23, -1}, // Button 2
+    {24, 25, 26, 27, 28, 29, 30, 31, -1}  // Button 3
 };
 
 void save_button_state(int button, uint8_t r, uint8_t g, uint8_t b, float brightness) {
     if (button < 0 || button > 3) return;
     button_states[button] = (ButtonColor){r, g, b, brightness};
+}
+
+void save_button_color(int button, uint8_t r, uint8_t g, uint8_t b, float brightness){
+    if (button < 0 || button > 3) return;
+    button_colors[button] = (ButtonColor){r, g, b, brightness};
+}
+
+ButtonColor get_button_color(int button) {
+    ButtonColor default_state = {255, 255, 255, 1.0f};
+    if (button < 0 || button > 3) return default_state;
+    return button_colors[button];
 }
 
 ButtonColor get_button_state(int button) {
@@ -83,19 +103,57 @@ void led_show(void) {
 }
 
 void set_button_color(int button_num, uint8_t r, uint8_t g, uint8_t b, float brightness) {
-    if (button_num < 0 || button_num > 3) return;  // safety check
+    if (button_num < 0 || button_num >=NUM_BUTTONS) return;  // safety check
 
     if(button_num == 111){
-    for (int i = 0; i < 72; i++) {
-        led_set_color_brightness(i, r, g, b, brightness);
-    }
-    return;
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            save_button_state(i, r, g, b, brightness);
+            const int *led_list = buttonLEDs[i];
+            for (int j = 0; led_list[j] != -1; j++) {
+                led_set_color_brightness(led_list[j], r, g, b, brightness);
+            }
+        }
+        return;
     }
 
-    const int *led_list = buttonLEDs[button_num];
+    save_button_state(button_num, r, g, b, brightness);
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        ButtonColor state = get_button_state(i);
+        const int *led_list = buttonLEDs[i];
+        for (int j = 0; led_list[j] != -1; j++) {
+            led_set_color_brightness(led_list[j], state.r, state.g, state.b, state.brightness);
+        }
+    }
+}
 
-    for (int i = 0; led_list[i]!=-1; i++) {
-        led_set_color_brightness(led_list[i], r, g, b, brightness);
+void save_button_state_persistent(int button, uint8_t r, uint8_t g, uint8_t b, float brightness) {
+    nvs_handle_t nvs;
+    if (nvs_open("led_states", NVS_READWRITE, &nvs) == ESP_OK) {
+        uint32_t packed = (r << 24) | (g << 16) | (b << 8) | (uint8_t)(brightness * 100);
+        char key[8];
+        sprintf(key, "btn%d", button);
+        nvs_set_u32(nvs, key, packed);
+        nvs_commit(nvs);
+        nvs_close(nvs);
+    }
+}
+
+void load_button_states_from_nvs(void) {
+    nvs_handle_t nvs;
+    if (nvs_open("led_states", NVS_READONLY, &nvs) == ESP_OK) {
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            char key[8];
+            sprintf(key, "btn%d", i);
+            uint32_t packed;
+            if (nvs_get_u32(nvs, key, &packed) == ESP_OK) {
+                uint8_t r  = (packed >> 24) & 0xFF;
+                uint8_t g  = (packed >> 16) & 0xFF;
+                uint8_t b  = (packed >> 8)  & 0xFF;
+                float br   = (packed & 0xFF) / 100.0f;
+                save_button_state(i, r, g, b, br);
+            }
+        }
+        nvs_close(nvs);
     }
 }
 

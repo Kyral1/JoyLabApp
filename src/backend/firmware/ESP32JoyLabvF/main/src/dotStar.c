@@ -2,7 +2,7 @@
 #include "esp_log.h"
 
 #define DATA_PIN   23   // DotStar DI 
-#define CLOCK_PIN  18   // DotStar CI 
+#define CLOCK_PIN  22   // DotStar CI 
 #define NUM_LEDS   72
 
 static const char *TAG = "DOTSTAR";

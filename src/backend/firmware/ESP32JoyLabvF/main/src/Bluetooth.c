@@ -175,8 +175,20 @@ static inline void start_advertising(void) {
     ESP_LOGI(TAG, "Started advertising");
 }
 
-void ensure_led_ready(void){
+/*void ensure_led_ready(void){
     if (!s.led_ready) {led_init(); s.led_ready = true;}
+}*/
+
+void ensure_led_ready(void) {
+    static bool led_ready = false;  // persists across calls & tasks
+
+    if (!led_ready) {
+        led_init();
+        led_ready = true;
+        ESP_LOGI("BT_JOYLAB", "LED initialized (first time)");
+    } else {
+        ESP_LOGI("BT_JOYLAB", "LED already ready, skipping reinit");
+    }
 }
 
 static void ensure_motor01_ready(void){
@@ -308,13 +320,32 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
   ensure_led_ready();
   float br = (float)br_pct / 100.0f;
   if(idx == 111){
-    set_button_color(idx, r, g, b, br);
+    ESP_LOGI(TAG, "in ALL");
     for (int i = 0; i <= 3; i++){
-        save_button_state(i, r, g, b, br);
+      if (r == 0 && g == 0 && b == 0) {
+      // just turn off LEDs visually, don’t save to memory
+      set_button_color(i, 0, 0, 0, br);
+      }else{
+        set_button_color(i, r, g, b, br);
+        save_button_color(i, r, g, b, br);
+        //save_button_state(i, r, g, b, br);
+        save_button_state_persistent(i, r, g, b, br);
+      }
     }
+    led_show();
+    return;
   }else if (idx <4){
+    ESP_LOGI(TAG, "in Single");
+    if (r == 0 && g == 0 && b == 0) {
+      // just turn off LEDs visually, don’t save to memory
+      set_button_color(idx, 0, 0, 0, br);
+      led_show();
+      return;
+    }
     set_button_color(idx, r, g, b, br);
-    save_button_state(idx, r, g, b, br);
+    save_button_color(idx, r, g, b, br);
+    //save_button_state(idx, r, g, b, br);
+    save_button_state_persistent(idx, r, g, b, br);
   }
   led_show();
 }
@@ -677,6 +708,8 @@ esp_err_t bluetooth_init(void) {
   ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_cb));
   ESP_ERROR_CHECK(esp_ble_gatts_register_callback(gatts_cb));
   ESP_ERROR_CHECK(esp_ble_gatts_app_register(0x55));  // single app profile
+
+  load_button_states_from_nvs();
 
   ESP_LOGI(TAG, "BLE init done");
   return ESP_OK;

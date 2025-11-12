@@ -22,6 +22,32 @@ import LinearGradient from 'react-native-linear-gradient'
   const [selectedButton, setSelectedButton] = useState('All');
   const [brightness, setBrightness] = useState(0.5); //Scaled from 0-1 based on slider position
   const [currentColor, setCurrentColor] = useState({ r: 255, g: 255, b: 255 }); //object {r,g,b}
+
+  const [currentColor1, setCurrentColor1] = useState({ r: 255, g: 255, b: 255 });
+  const [currentColor2, setCurrentColor2] = useState({ r: 255, g: 255, b: 255 });
+  const [currentColor3, setCurrentColor3] = useState({ r: 255, g: 255, b: 255 });
+  const [currentColor4, setCurrentColor4] = useState({ r: 255, g: 255, b: 255 });
+
+  const getButtonColor = () => {
+  switch (selectedButton) {
+    case "1": return currentColor1;
+    case "2": return currentColor2;
+    case "3": return currentColor3;
+    case "4": return currentColor4;
+    default: return currentColor; // for "All"
+  }
+};
+
+const setButtonColor = (color: { r: number; g: number; b: number }) => {
+  switch (selectedButton) {
+    case "1": setCurrentColor1(color); break;
+    case "2": setCurrentColor2(color); break;
+    case "3": setCurrentColor3(color); break;
+    case "4": setCurrentColor4(color); break;
+    default: setCurrentColor(color); break; // for "All"
+  }
+};
+
   const [pickerVisible, setPickerVisible] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#FFFFFF");
   const [tempColor, setTempColor] = useState("#FFFFFF")
@@ -32,32 +58,33 @@ import LinearGradient from 'react-native-linear-gradient'
     setTempColor(selectedColor)
     setPickerVisible(true);
   };
-
+  
   //LED Control Handlers
   //Toggle LED On/Off
   const handleToggleButton = (on:boolean) => {
       const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
-      const { r, g, b } = currentColor;
+      const { r, g, b } = getButtonColor();
       const br = Math.round(brightness * 100); //slider placement
       const frame = [0x01, 0x01, 0x05, idx, on ? r : 0, on ? g : 0, on ? b : 0, br];
       sendFrame(frame);
   }
 
   //Change LED Color
-  const handleChangeColor = (color: {r: number; g: number; b:number})=>{
-      const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
-      const br = Math.round(brightness * 100);
-      const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
-      sendFrame(frame);
+  const handleChangeColor = (color: { r: number; g: number; b: number })=>{
+    setButtonColor(color);
+    const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
+    const br = Math.round(brightness * 100);
+    const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
+    sendFrame(frame);
   }
 
   //Change LED Brightness
   const handleBrightnessChange = (val: number) => {
     setBrightness(val); //updates the state to remember the slider position
-    const {r,g,b} = currentColor;
-    const idx = selectedButton  === "All" ? 111 : parseInt(selectedButton)-1;
+    const { r, g, b } = getButtonColor();
+    const idx = selectedButton === "All" ? 111 : parseInt(selectedButton) - 1;
     const br = Math.round(val * 100);
-    const frame = [0x01, 0x01, 0x05, idx, r, g, b, br]; // CAT=1, CMD=3
+    const frame = [0x01, 0x01, 0x05, idx, r, g, b, br];
     sendFrame(frame);
   }
 
@@ -126,7 +153,7 @@ import LinearGradient from 'react-native-linear-gradient'
                         key={c.name}
                         style={[styles.colorBtn, { backgroundColor: c.color }]}
                         onPress={() => {
-                            setCurrentColor(c.rgb);  
+                            /*setCurrentColor(c.rgb);  */
                             handleChangeColor(c.rgb); //change color + remember color
                         }} 
                     />

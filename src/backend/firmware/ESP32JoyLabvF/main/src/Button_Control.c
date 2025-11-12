@@ -10,7 +10,7 @@ static const char *TAG = "BUTTON";
 #define DEBOUNCE_DELAY_MS 50
 
 //Button Pins Mapping (change when ESP is configured)
-const int button_pins[NUM_BUTTONS] = {4, 0, 26, 27};
+const int button_pins[NUM_BUTTONS] = {2, 4, 15, 18};
 
 //resets each pin before config
 void button_init_all(void) {
