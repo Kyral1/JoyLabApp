@@ -242,7 +242,7 @@ const setButtonColor = (color: { r: number; g: number; b: number }) => {
               <Text style={[styles.label, { marginTop: 20 }]}>Volume</Text>
               <Slider
                 style={styles.slider}
-                value={brightness}
+                value={volume}
                 onValueChange={handleVolumeChange}
                 minimumValue={0}
                 maximumValue={1}
