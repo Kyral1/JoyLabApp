@@ -137,10 +137,6 @@ static TaskHandle_t irs_task_handle = NULL;
 static TaskHandle_t force_task_handle = NULL;
 
 // advertise the 16-bit service UUID 
-/*static uint8_t kSrvUuid16[2] = {
-  (uint8_t)(SRV_UUID & 0xFF),
-  (uint8_t)((SRV_UUID >> 8) & 0xFF),
-};*/
 static uint8_t kSrvUuid128[16] = {
   0xfb, 0x34, 0x9b, 0x5f,
   0x80, 0x00, 0x00, 0x80,
@@ -209,7 +205,7 @@ static void ensure_irs_ready(void){
 }
 
 static void ensure_force_ready(void){
-  if(!s.force_ready){irs_init(); s.force_ready = true;}
+  if(!s.force_ready){force_sensor_init(); s.force_ready = true;}
 }
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
 static esp_err_t add_char16(uint16_t uuid16,
@@ -411,6 +407,7 @@ static void irs_continuous_task(void *pvParameters) {
     while (1) {
         uint16_t distance = irs_read_distance_mm();
         ble_notify_distance(distance);
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -471,18 +468,6 @@ static void stop_force_continuous_task(void){
   }else{
     ESP_LOGW(TAG, "Force task not running");
   }
-}
-
-static void cmd_game_start_trial(void) {
-  ESP_LOGI(TAG, "Start reaction trial");
-  // TODO: arm sensors, record t0, choose LED target based on led_mode, etc.
-  // For demo: pretend result after 250 ms (call notify when actual result ready)
-  // evt_notify_game_result_ms(250);
-}
-
-static void cmd_game_cancel(void) {
-  ESP_LOGI(TAG, "Cancel trial");
-  // TODO: stop timers, clear LEDs, disarm sensors
 }
 
 static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {

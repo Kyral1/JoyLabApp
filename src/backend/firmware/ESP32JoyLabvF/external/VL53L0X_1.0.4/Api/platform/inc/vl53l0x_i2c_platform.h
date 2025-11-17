@@ -72,6 +72,9 @@ typedef unsigned char bool_t;
  *
  */
 
+int VL53L0X_get_sda_pin(void);
+int VL53L0X_get_scl_pin(void);
+
 int32_t VL53L0X_comms_initialise(uint8_t  comms_type,
                                           uint16_t comms_speed_khz);
 

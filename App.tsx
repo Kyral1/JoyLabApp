@@ -9,6 +9,7 @@ import StatisticsScreen from "./src/frontend/screens/StatisticsScreen";
 //import GameModesScreen from "./src/frontend/screens/GameModesScreen";
 import GameModesStack from "./src/frontend/navigation/GameModesStack";
 import TestScreen from "./src/frontend/screens/TestScreen";
+import SupabaseTestScreen from "./src/frontend/screens/SupaBaseTestScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -82,6 +83,8 @@ export default function App() {
           name="Test Screen"
           component={TestScreen}
         />
+
+        <Tab.Screen name="Supabase Test" component={SupabaseTestScreen} />
 
       </Tab.Navigator>
     </NavigationContainer>
