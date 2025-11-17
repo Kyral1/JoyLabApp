@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
+//import { start } from "repl";
 
 
 export default function LEDModeScreen() {    
@@ -11,6 +12,9 @@ export default function LEDModeScreen() {
     const [gameRunning, setGameRunning] = useState(false);
     const [hits, setHits] = useState(0);
     const [attempts, setAttempts] = useState(0);
+
+    //LED Reg Mode states
+    const [ledRegRunning, setLedRegRunning] = useState(false);
 
     // BLE Frame Function 
     const sendFrame = async (frame: number[]) => {
@@ -41,7 +45,9 @@ export default function LEDModeScreen() {
     // Whack-A-Mole
     const startWhackGame = async () => {
         await sendFrame([0x04, 0x03, 0x00]); // example CMD: start
+        await sendFrame([0x04, 0x07, 0x00]);
         setGameRunning(true);
+        setLedRegRunning(false);
     };
 
     //STATS: Can collect data from here 
@@ -51,6 +57,21 @@ export default function LEDModeScreen() {
         //when the game stops, the variable hit is the number of points, and attempt is the number of tries (based on IR sensor)
         //everytime the game stops, aka when this function is called you can add those numbers with a date and time stamp as an entry to a DB
     };
+
+    // LED Regular Mode
+    const startLedRegGame = async () => {
+        await sendFrame([0x04, 0x06, 0x00]); // example CMD: start LED regular mode
+        await sendFrame([0x04, 0x02, 0x00]);
+        setGameRunning(false);
+        setLedRegRunning(true);
+    }
+
+    const stopLedRegGame = async () => {
+        await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop LED regular mode
+        setLedRegRunning(false);
+    }
+
+
  return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -87,6 +108,34 @@ export default function LEDModeScreen() {
             style={[styles.buttonOff, { opacity: gameRunning ? 1 : 0.5 }]}
             onPress={stopWhackGame}
             disabled={!gameRunning}
+          >
+            <Text style={styles.buttonText}>Stop</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionHeader}>LED Regular</Text>
+
+        {/* Description */}
+        <Text style={styles.description}>
+          Description: Push buttons to turn them on and off.
+        </Text>
+
+        {/* Start / Stop buttons */}
+        <View style={[styles.row, { marginTop: 20 }]}>
+          <TouchableOpacity
+            style={[styles.button, { opacity: ledRegRunning ? 0.5 : 1 }]}
+            onPress={startLedRegGame}
+            disabled={ledRegRunning}
+          >
+            <Text style={styles.buttonText}>Start</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.buttonOff, { opacity: ledRegRunning ? 1 : 0.5 }]}
+            onPress={stopLedRegGame}
+            disabled={!ledRegRunning}
           >
             <Text style={styles.buttonText}>Stop</Text>
           </TouchableOpacity>

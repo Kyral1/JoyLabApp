@@ -85,6 +85,8 @@ enum{
     CMD_LED_MODE = 0x03,
     CMD_SOUND_MODE = 0x04,
     CMD_DUAL_MODE = 0x05,
+    CMD_LED_REG_START = 0x06,
+    CMD_LED_REG_STOP = 0x07,
 };
 
 //EVENTS (esp32 -> phone)
@@ -549,6 +551,12 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_GA_STOP:
           stop_whackamole_game();
+          break;
+        case CMD_LED_REG_START:
+          start_led_reg_game();
+          break;
+        case CMD_LED_REG_STOP:
+          stop_led_reg_game();
           break;
       }break;
 

@@ -9,10 +9,55 @@
 #include "IRS_Control.h"
 
 static TaskHandle_t game_task_handle = NULL;
-static bool game_running = false;
+static bool whack_game_running = false;
 static const char *TAG = "GAME_CONTROL";
 static int led_mode_points = 0;
 static int led_mode_attempts = 0;
+
+static bool led_reg_game_running = false;
+static bool button_led_on[NUM_BUTTONS] = {false};
+static int led_reg_points = 0;
+static int led_reg_attempts = 0;
+
+static void LED_regular_game_task(void *pvParameters) {
+    ensure_led_ready();   // from bluetooth.c
+    button_init_all();    // from Button_Control.c
+    load_button_states_from_nvs(); 
+    led_clear();
+    //irs_init();
+    ESP_LOGI(TAG, "Starting Regular LED game!");
+    bool attempt_logged = false;
+
+    while(led_reg_game_running){
+        for(int i = 0; i < NUM_BUTTONS; i++){
+            if(button_is_pressed(i)){
+                button_led_on[i] = !button_led_on[i];
+
+                if(button_led_on[i]){
+                    ButtonColor color = get_button_color(i);
+                    set_button_color(i, color.r, color.g, color.b, color.brightness);
+                    ESP_LOGI(TAG, "Button %d → LED ON", i);
+                }else{
+                    set_button_color(i, 0, 0, 0, 0.0f);
+                    ESP_LOGI(TAG, "Button %d → LED OFF", i);
+                }
+
+                while(button_is_pressed(i)){ //wait for release
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+
+                led_show();
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+    led_clear();
+    led_show();
+
+    led_reg_game_running = false;
+    game_task_handle = NULL;
+    vTaskDelete(NULL);
+}
 
 static void whackamole_game_task(void *pvParameters) {
     ensure_led_ready();   // from bluetooth.c
@@ -21,13 +66,11 @@ static void whackamole_game_task(void *pvParameters) {
     led_clear();
     //irs_init();
 
-
     ESP_LOGI(TAG, "Starting Whack-A-Mole game!");
-    game_running = true;
 
     bool attempt_logged = false;
 
-    while (game_running) {
+    while (whack_game_running) {
         // Choose a random button 0–3
         int target = esp_random() % NUM_BUTTONS;
 
@@ -47,7 +90,7 @@ static void whackamole_game_task(void *pvParameters) {
         ESP_LOGI(TAG, "after LED show");
 
         // Wait for correct button press
-        while (game_running) {
+        while (whack_game_running) {
             //bool near = irs_is_hand_near();  
             bool pressed = button_is_pressed(target);
             //ESP_LOGI(TAG, "inside while loop");
@@ -78,41 +121,68 @@ static void whackamole_game_task(void *pvParameters) {
     led_show();
     ESP_LOGI(TAG, "Whack-A-Mole stopped.");
     // Set handle to NULL before delete
+    whack_game_running = false;
     game_task_handle = NULL;
     vTaskDelete(NULL);
 }
 
 // ================= PUBLIC FUNCTIONS =================
+void start_led_reg_game(void){
+    if (game_task_handle != NULL) {
+        ESP_LOGW(TAG, "Cannot start Regular game — another game is running!");
+        return;
+    }
+    stop_whackamole_game();
+    led_reg_game_running = true;
+    whack_game_running = false;
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        button_led_on[i] = false;
+    }
 
-void start_whackamole_game(void) {
-    if (game_task_handle == NULL) {
-        led_mode_points = 0;
-        led_mode_attempts = 0;
-        evt_notify_led_whack_result(led_mode_points, led_mode_attempts);
+    xTaskCreate(
+        LED_regular_game_task,
+        "LED_regular_game_task",
+        4096,
+        NULL,
+        5,
+        &game_task_handle
+    );
+}
 
-        xTaskCreate(
-            whackamole_game_task,
-            "whackamole_game_task",
-            4096,
-            NULL,
-            5,
-            &game_task_handle
-        );
-    } else {
-        ESP_LOGW(TAG, "Whack-A-Mole already running.");
+void stop_led_reg_game(void) {
+    if (game_task_handle != NULL) {
+        ESP_LOGI(TAG, "Stopping LED-reg-game..");
+        led_reg_game_running = false;   // signal to end loop
     }
 }
 
-/*void stop_whackamole_game(void) {
+void start_whackamole_game(void) {
     if (game_task_handle != NULL) {
-        ESP_LOGI(TAG, "Stopping Whack-A-Mole...");
-        game_running = false;
-        vTaskDelete(game_task_handle);
-        game_task_handle = NULL;
-    }*/
+        ESP_LOGW(TAG, "Cannot start Whack-A-Mole — another game is running!");
+        return;
+    }
+    
+    stop_led_reg_game();
+    whack_game_running = true;
+    led_reg_game_running = false;
+
+    led_mode_points = 0;
+    led_mode_attempts = 0;
+    evt_notify_led_whack_result(led_mode_points, led_mode_attempts);
+
+    xTaskCreate(
+        whackamole_game_task,
+        "whackamole_game_task",
+        4096,
+        NULL,
+        5,
+        &game_task_handle
+    );
+}
+
 void stop_whackamole_game(void) {
     if (game_task_handle != NULL) {
         ESP_LOGI(TAG, "Stopping Whack-A-Mole...");
-        game_running = false;   // signal to end loop
+        whack_game_running = false;   // signal to end loop
     }
 }
