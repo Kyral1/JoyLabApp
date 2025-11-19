@@ -44,8 +44,8 @@ export default function LEDModeScreen() {
 
     // Whack-A-Mole
     const startWhackGame = async () => {
-        await sendFrame([0x04, 0x03, 0x00]); // example CMD: start
-        await sendFrame([0x04, 0x07, 0x00]);
+        await sendFrame([0x04, 0x03, 0x00]); // example CMD: start whack
+        //await sendFrame([0x04, 0x05, 0x00]); //stop reg
         setGameRunning(true);
         setLedRegRunning(false);
     };
@@ -60,14 +60,14 @@ export default function LEDModeScreen() {
 
     // LED Regular Mode
     const startLedRegGame = async () => {
-        await sendFrame([0x04, 0x06, 0x00]); // example CMD: start LED regular mode
-        await sendFrame([0x04, 0x02, 0x00]);
+        await sendFrame([0x04, 0x04, 0x00]); // example CMD: start LED regular mode
+        //await sendFrame([0x04, 0x02, 0x00]); //stop whack
         setGameRunning(false);
         setLedRegRunning(true);
     }
 
     const stopLedRegGame = async () => {
-        await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop LED regular mode
+        await sendFrame([0x04, 0x05, 0x00]); // example CMD: stop LED regular mode
         setLedRegRunning(false);
     }
 

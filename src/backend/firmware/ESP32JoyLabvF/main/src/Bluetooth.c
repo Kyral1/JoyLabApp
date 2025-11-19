@@ -60,10 +60,10 @@ enum{
 //Commands (cmd) - LED
 enum{
     CMD_LED_SET_PIXEL = 0x01, //payload: 
-    CMD_LED_SET_MODE = 0x02,  //payload: modeID
+    //CMD_LED_SET_MODE = 0x02,  //payload: modeID
     CMD_LED_SET_BRIGHT = 0x03, //payload: brightness 0-100
-    CMD_GM_START_TRIAL = 0x10,
-    CMD_GM_CANCEL      = 0x11,
+    //CMD_GM_START_TRIAL = 0x10,
+    //CMD_GM_CANCEL      = 0x11,
 };
 
 //commands - AUDIO
@@ -81,12 +81,12 @@ enum{
 //commands - GAME
 enum{
     CMD_GA_START = 0x01, //payload: gameID
-    CMD_GA_STOP = 0x02,  //payload: none
-    CMD_LED_MODE = 0x03,
-    CMD_SOUND_MODE = 0x04,
-    CMD_DUAL_MODE = 0x05,
-    CMD_LED_REG_START = 0x06,
-    CMD_LED_REG_STOP = 0x07,
+    CMD_LED_WHACK_STOP = 0x02,  //payload: none
+    CMD_LED_WHACK_START = 0x03,
+    //CMD_SOUND_MODE = 0x04,
+    //CMD_DUAL_MODE = 0x05,
+    CMD_LED_REG_START = 0x04,
+    CMD_LED_REG_STOP = 0x05,
 };
 
 //EVENTS (esp32 -> phone)
@@ -348,11 +348,11 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
   led_show();
 }
 
-static void cmd_led_set_mode(uint8_t mode) {
+/*static void cmd_led_set_mode(uint8_t mode) {
   s.settings.LED_mode = mode;
   ESP_LOGI(TAG, "LED mode set to %u", mode);
   // TODO: wire into your game/mode engine
-}
+}*/
 
 static void cmd_audio_set_state(uint8_t on){
   ensure_speaker_ready();  // ensure pin is ready
@@ -484,9 +484,6 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_LED_SET_PIXEL:
           if (len >= 5) cmd_led_set_pixel(pl[0], pl[1], pl[2], pl[3], pl[4]);
           break;
-        case CMD_LED_SET_MODE:
-          if (len >= 1) cmd_led_set_mode(pl[0]);
-          break;
         case CMD_LED_SET_BRIGHT:
           if (len>=1){
             float brightness = (float)pl[0] / 100.0f;
@@ -546,10 +543,10 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
     
     case CAT_GAME:
       switch (cmd) {
-        case CMD_LED_MODE:
+        case CMD_LED_WHACK_START:
           start_whackamole_game();
           break;
-        case CMD_GA_STOP:
+        case CMD_LED_WHACK_STOP:
           stop_whackamole_game();
           break;
         case CMD_LED_REG_START:
