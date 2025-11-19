@@ -29,14 +29,14 @@ import LinearGradient from 'react-native-linear-gradient'
   const [currentColor4, setCurrentColor4] = useState({ r: 255, g: 255, b: 255 });
 
   const getButtonColor = () => {
-  switch (selectedButton) {
-    case "1": return currentColor1;
-    case "2": return currentColor2;
-    case "3": return currentColor3;
-    case "4": return currentColor4;
+    switch (selectedButton) {
+      case "1": return currentColor1;
+      case "2": return currentColor2;
+      case "3": return currentColor3;
+      case "4": return currentColor4;
     default: return currentColor; // for "All"
-  }
-};
+    }
+  };
 
 const setButtonColor = (color: { r: number; g: number; b: number }) => {
   switch (selectedButton) {
@@ -47,6 +47,21 @@ const setButtonColor = (color: { r: number; g: number; b: number }) => {
     default: setCurrentColor(color); break; // for "All"
   }
 };
+
+//turning all buttons to clear when the screen first loads: 
+useEffect(() => {
+  // Reset local states
+  setCurrentColor({ r: 0, g: 0, b: 0 });
+  setCurrentColor1({ r: 0, g: 0, b: 0 });
+  setCurrentColor2({ r: 0, g: 0, b: 0 });
+  setCurrentColor3({ r: 0, g: 0, b: 0 });
+  setCurrentColor4({ r: 0, g: 0, b: 0 });
+  setBrightness(0);
+
+  // Send BLE frame to actually turn off all LEDs
+  const frame = [0x01, 0x01, 0x05, 111, 0, 0, 0, 0];
+  sendFrame(frame);
+}, []); 
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#FFFFFF");

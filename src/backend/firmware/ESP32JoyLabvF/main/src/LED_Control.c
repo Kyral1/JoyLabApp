@@ -13,6 +13,7 @@ static uint8_t led_buffer[NUM_LEDS * 3];
 static float global_brightness = 1.0f;
 
 //default states: white full brightness
+//the live state of the button
 static ButtonColor button_states[NUM_BUTTONS] = {
     {255, 255, 255, 1.0f},  
     {255, 255, 255, 1.0f},
@@ -20,6 +21,7 @@ static ButtonColor button_states[NUM_BUTTONS] = {
     {255, 255, 255, 1.0f},
 };
 
+//the color the button is set to 
 static ButtonColor button_colors[NUM_BUTTONS]={
     {255, 255, 255, 1.0f},  
     {255, 255, 255, 1.0f},
