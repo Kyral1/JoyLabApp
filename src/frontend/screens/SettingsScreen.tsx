@@ -5,7 +5,8 @@ import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 import ColorPicker from 'react-native-wheel-color-picker';
-import LinearGradient from 'react-native-linear-gradient'
+import LinearGradient from 'react-native-linear-gradient';
+import MultiSlider from "@ptomasroos/react-native-multi-slider";
 
  export default function SettingsScreen() {
   //BLE send frame function: 
@@ -103,6 +104,9 @@ useEffect(() => {
     sendFrame(frame);
   }
 
+  // --- Slider states
+  const [volume, setVolume] = useState(0.6);
+
   //audio handlers
       const audioToggle = (on: boolean) => {
       setAudio(on);
@@ -112,14 +116,45 @@ useEffect(() => {
 
     //Audio Volume Handler
     const handleVolumeChange = (val: number) => {
+      setVolume(val);
       const scaled = Math.round(val * 100);
       const frame = [0x02, 0x02, 0x01, scaled];
       sendFrame(frame);
     };
 
 
-  // --- Slider states
-  const [volume, setVolume] = useState(0.6);
+    //sensory pad settings 
+    const [sensoryMode, setSensoryMode] = useState(0); //0=off,1=no vib,2=constant vib, 3=increasing vib
+    const [constantIntensity, setConstantIntensity] = useState(50);
+    const [minIntensity, setMinIntensity] = useState(10);
+    const [maxIntensity, setMaxIntensity] = useState(80);
+
+    const sendModeFrame = (m: number) => {
+      setSensoryMode(m);
+      switch(m){
+        case 1:
+          sendFrame([0x08, 0x01, 0x00]);
+          break;
+        case 2:
+          sendFrame([0x08, 0x02, 0x01, constantIntensity]);
+          break;
+        case 3:
+          sendFrame([0x08, 0x03, 0x02, minIntensity, maxIntensity]);
+          break;
+      }
+    }
+
+    const sendConstantIntensity = (value: number) => {
+      setConstantIntensity(value);
+      sendFrame([0x08, 0x02, 0x01, value]);
+    }
+
+    const sendIncreasingValues = (min: number, max: number) => {
+      setMinIntensity(min);
+      setMaxIntensity(max);
+      sendFrame([0x08, 0x03, 0x02, min, max]);
+    }
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -243,6 +278,7 @@ useEffect(() => {
                 maximumTrackTintColor="#D6DBDF"
             />
         </View>
+
         <View style={styles.card}>
               <Text style={styles.sectionHeader}>Audio Control</Text>
               <View style={styles.row}>
@@ -265,6 +301,85 @@ useEffect(() => {
                 maximumTrackTintColor="#D6DBDF"
               />
         </View> 
+        <View style={styles.card}>
+          <Text style={styles.sectionHeader}>Sensory Pad</Text>
+            {/* Mode Selector */}
+            <View style={styles.modeContainer}>
+              {[
+                { id: 1, label: "Vibration OFF" },
+                { id: 2, label: "Constant Vib" },
+                { id: 3, label: "Increasing Vib" },
+              ].map((option) => (
+              <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.modeBtn,
+                sensoryMode === option.id && styles.modeBtnActive,
+              ]}
+              onPress={() => sendModeFrame(option.id)}
+            >
+              <Text
+                style={[
+                  styles.modeText,
+                  sensoryMode === option.id && styles.modeTextActive,
+                ]}
+            >
+            {option.label}
+          </Text>
+              </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Conditional UI for Sliders */}
+        {sensoryMode === 2 && (
+        <>
+          <Text style={styles.label}>Intensity</Text>
+          <Slider
+            style={styles.slider}
+            value={constantIntensity}
+            onValueChange={(v) => sendConstantIntensity(Math.round(v))}
+            minimumValue={0}
+            maximumValue={100}
+            minimumTrackTintColor="#4A7FFB"
+            maximumTrackTintColor="#D6DBDF"
+          />
+        </>
+      )}
+
+      {sensoryMode === 3 && (
+        <>
+          <Text style={styles.label}>Intensity Ranges</Text>
+          <MultiSlider
+            values={[minIntensity, maxIntensity]}
+            min={0}
+            max={100}
+            step={1}
+            sliderLength={300}
+            onValuesChange={(vals) => {
+              const [min, max] = vals.map(v => Math.round(v));
+              setMinIntensity(min);
+              setMaxIntensity(max);
+              sendIncreasingValues(min, max);
+            }}
+            selectedStyle={{ backgroundColor: "#4A7FFB" }}
+            unselectedStyle={{ backgroundColor: "#D6DBDF" }}
+            markerStyle={{
+            height: 24,
+            width: 24,
+            borderRadius: 12,
+            backgroundColor: "#4A7FFB",
+            }}
+            containerStyle={{ alignSelf: "center", marginTop: 20 }}
+            trackStyle={{ height: 6, borderRadius: 3 }}
+          />
+          
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <Text>{minIntensity}%</Text>
+            <Text>{maxIntensity}%</Text>
+          </View>
+        </>
+      )}
+        </View>
     </ScrollView>
   );
 }
@@ -381,4 +496,30 @@ const styles = StyleSheet.create({
     color: '#34495E',
     marginBottom: 10,
   },
+
+  modeContainer: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginVertical: 10,
+},
+modeBtn: {
+  flex: 1,
+  paddingVertical: 10,
+  backgroundColor: "#EAECEE",
+  borderRadius: 12,
+  marginHorizontal: 4,
+  alignItems: "center",
+},
+modeBtnActive: {
+  backgroundColor: "#4A7FFB",
+},
+modeText: {
+  fontSize: 14,
+  color: "#34495E",
+  fontWeight: "500",
+},
+modeTextActive: {
+  color: "#FFFFFF",
+  fontWeight: "600",
+},
 });

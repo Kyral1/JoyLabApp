@@ -43,6 +43,14 @@ typedef enum {
     CAT_BUTTON = 0x05,
     CAT_IRS = 0x06,
     CAT_FORCE = 0x07,
+    CAT_SENSORY = 0x08,
+};
+
+//sensory pad commands
+enum{
+  CMD_SENSORY_NO_VIBRATION = 0x01,
+  CMD_SENSORY_CONSTANT_VIBRATION = 0x02,
+  CMD_SENSORY_INCREASING_VIBRATION = 0x03,
 };
 
 //Commands - Force Sensor
@@ -556,6 +564,19 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           stop_led_reg_game();
           break;
       }break;
+
+      case CAT_SENSORY:
+        switch (cmd) {
+          case CMD_SENSORY_NO_VIBRATION:
+            sensory_no_vibration_start();
+            break;
+          case CMD_SENSORY_CONSTANT_VIBRATION:
+            if (len >= 1) sensory_constant_vibration_start(pl[0]);
+            break;
+          case CMD_SENSORY_INCREASING_VIBRATION:
+            sensory_increasing_vibration_start();
+            break;
+        }break;
 
     default:
       // Unknown category — safely ignore
