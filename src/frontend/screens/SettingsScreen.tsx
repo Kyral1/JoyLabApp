@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal, Alert} from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
@@ -7,6 +7,7 @@ import { bleService } from '../services/BLEService';
 import ColorPicker from 'react-native-wheel-color-picker';
 import LinearGradient from 'react-native-linear-gradient';
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
+import { bleWristbandService } from '../services/BLEWristBandService';
 
  export default function SettingsScreen() {
   //BLE send frame function: 
@@ -16,6 +17,33 @@ import MultiSlider from "@ptomasroos/react-native-multi-slider";
       console.log("Frame sent:", frame);
     } catch (e: any) {
       console.error('Error sending frame:', e?.message ?? String(e));
+    }
+  };
+
+  //connecting wristband
+  const [connectingBand, setConnectingBand] = useState(false);
+  const [bandConnected, setBandConnected] = useState(false);
+  
+  const handleConnectBand = async () => {
+    try{
+      setConnectingBand(true);
+        await bleWristbandService.connect();
+        setBandConnected(true);
+        Alert.alert('BLE', 'Connected to JoyLab WristBand ✅');
+    } catch (e: any){
+        Alert.alert('BLE Error', e?.message ?? String(e));
+    } finally {
+        setConnectingBand(false);
+    }
+  }
+
+  const handleDisconnectBand = async () => {
+    try {
+      await bleWristbandService.disconnect();
+      setBandConnected(false);
+      Alert.alert("Wristband", "Disconnected from Wristband ❌");
+    } catch (e: any) {
+      Alert.alert("Wristband Error", e?.message ?? String(e));
     }
   };
 
@@ -159,6 +187,44 @@ useEffect(() => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Settings</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.sectionHeader}>Wristband Connection</Text>
+
+        <View style={styles.bandRow}>
+        <View>
+          <Text style={styles.subLabel}>
+            {bandConnected ? "Connected" : "Not Connected"}
+          </Text>
+        </View>
+
+        {/* Connect Button */}
+        {!bandConnected && (
+          <TouchableOpacity
+            style={[
+              styles.bandBtn,
+              connectingBand && { backgroundColor: "#AAB7B8" }
+            ]}
+            onPress={handleConnectBand}
+            disabled={connectingBand}
+          >
+          <Text style={styles.bandBtnText}>
+            {connectingBand ? "Connecting..." : "Connect"}
+          </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Disconnect Button */}
+        {bandConnected && (
+          <TouchableOpacity
+            style={[styles.bandBtnDisconnect]}
+            onPress={handleDisconnectBand}
+          >
+          <Text style={styles.bandBtnDisconnectText}>Disconnect</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
 
       <View style={styles.card}>
             <Text style={styles.sectionHeader}>Button Color Customizatioin</Text>
@@ -522,4 +588,43 @@ modeTextActive: {
   color: "#FFFFFF",
   fontWeight: "600",
 },
+bandRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginTop: 10,
+},
+
+subLabel: {
+  fontSize: 14,
+  color: "#7F8C8D",
+  marginTop: 4,
+},
+
+bandBtn: {
+  backgroundColor: "#4A7FFB",
+  paddingVertical: 10,
+  paddingHorizontal: 18,
+  borderRadius: 12,
+},
+
+bandBtnText: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "600",
+},
+
+bandBtnDisconnect: {
+  backgroundColor: "#E74C3C",
+  paddingVertical: 10,
+  paddingHorizontal: 18,
+  borderRadius: 12,
+},
+
+bandBtnDisconnectText: {
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: "600",
+},
+
 });

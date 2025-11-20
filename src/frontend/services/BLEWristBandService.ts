@@ -25,7 +25,7 @@ class BLEWristbandService {
       const result = await PermissionsAndroid.requestMultiple([
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
         PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        //PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       ]);
       console.log('BLE Permissions:', result);
     }

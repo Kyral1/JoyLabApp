@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Button, Alert, Pressable, TouchableOpacity, Modal} from 'react-native';
 import { bleService } from '../services/BLEService';
-import { bleWristbandService } from '../services/BLEWristbandService';
+import { bleWristbandService } from '../services/BLEWristBandService';
 
 export default function HomeScreen() {
   console.log("🎮 HomeScreen loaded!");
@@ -59,7 +59,7 @@ return (
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
+      {/*<TouchableOpacity
         style={[styles.button, bandConnected && { backgroundColor: '#A5D6A7' }]}
         onPress={handleConnectBand}
         disabled={connectingBand || bandConnected}
@@ -67,7 +67,7 @@ return (
         <Text style={styles.buttonText}>
           {connectingBand ? 'Connecting...' : bandConnected ? 'Connected ✅' : 'Connect JoyLab WristBand'}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity>*/}
 
       <TouchableOpacity style={styles.button} onPress={() => setShowModal(true)}>
         <Text style={styles.buttonText}>How to Use</Text>
