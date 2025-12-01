@@ -1,96 +1,101 @@
 #include "VibrationMotor.h"
 #include "esp_log.h"
-#include "driver/ledc.h"
+#include "driver/mcpwm.h"
 #include "driver/gpio.h"
 
 static const char *TAG = "VIBRATION";
-static bool motor_state = false;
 
-// Motor 1: GPIO16
+// Motor pins (unchanged)
 #define MOTOR1_PWM_PIN     16
-#define MOTOR1_CHANNEL     LEDC_CHANNEL_0
-
-// Motor 2: GPIO17
 #define MOTOR2_PWM_PIN     17
-#define MOTOR2_CHANNEL     LEDC_CHANNEL_1
 
-#define MOTOR_TIMER        LEDC_TIMER_0
+// MCPWM unit/timer
+#define VIB_MCPWM_UNIT     MCPWM_UNIT_0
+#define VIB_MCPWM_TIMER    MCPWM_TIMER_0
 
+// Internal state
 static bool motor1_state = false;
 static bool motor2_state = false;
-static uint8_t motor1_intensity = 0;
-static uint8_t motor2_intensity = 0;
+static uint8_t motor1_intensity = 0;   // 0-100%
+static uint8_t motor2_intensity = 0;   // 0-100%
 
-void vibration_init(void){
-    ledc_timer_config_t timer = {
-        .speed_mode       = LEDC_LOW_SPEED_MODE,
-        .duty_resolution  = LEDC_TIMER_8_BIT,
-        .timer_num        = MOTOR_TIMER,
-        .freq_hz          = 5000,
-        .clk_cfg          = LEDC_AUTO_CLK
-    };
-    ledc_timer_config(&timer);
+// ============================================================
+// INITIALIZATION
+// ============================================================
+void vibration_init(void)
+{
+    // Configure GPIO pins
+    mcpwm_gpio_init(VIB_MCPWM_UNIT, MCPWM0A, MOTOR1_PWM_PIN); // Motor1
+    mcpwm_gpio_init(VIB_MCPWM_UNIT, MCPWM0B, MOTOR2_PWM_PIN); // Motor2
 
-    // Motor 1 PWM
-    ledc_channel_config_t ch1 = {
-        .gpio_num   = MOTOR1_PWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel    = MOTOR1_CHANNEL,
-        .timer_sel  = MOTOR_TIMER,
-        .duty       = 0,
-        .hpoint     = 0
+    // Configure PWM timer
+    mcpwm_config_t pwm_config = {
+        .frequency = 5000,            // 5 kHz
+        .cmpr_a = 0.0,                // Duty for Motor1 (0%)
+        .cmpr_b = 0.0,                // Duty for Motor2 (0%)
+        .counter_mode = MCPWM_UP_COUNTER,
+        .duty_mode = MCPWM_DUTY_MODE_0,
     };
-    ledc_channel_config(&ch1);
 
-    // Motor 2 PWM
-    ledc_channel_config_t ch2 = {
-        .gpio_num   = MOTOR2_PWM_PIN,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .channel    = MOTOR2_CHANNEL,
-        .timer_sel  = MOTOR_TIMER,
-        .duty       = 0,
-        .hpoint     = 0
-    };
-    ledc_channel_config(&ch2);
-    ESP_LOGI(TAG, "Vibration motor initialized");
+    mcpwm_init(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, &pwm_config);
+
+    ESP_LOGI(TAG, "Vibration motor initialized (MCPWM)");
 }
 
-// ===================== MOTOR 1 =====================
-void vibration_set_state_motor1(bool on) {
+// ============================================================
+// MOTOR 1 CONTROL
+// ============================================================
+void vibration_set_state_motor1(bool on)
+{
     motor1_state = on;
-    uint32_t duty = on ? (motor1_intensity * 255) / 100 : 0;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, MOTOR1_CHANNEL, duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, MOTOR1_CHANNEL);
+
+    float duty = on ? motor1_intensity : 0;
+
+    mcpwm_set_duty(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_A, duty);
+    mcpwm_set_duty_type(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
+
     ESP_LOGI(TAG, "Motor1 %s", on ? "ON" : "OFF");
 }
 
-void vibration_set_intensity_motor1(uint8_t intensity) {
+void vibration_set_intensity_motor1(uint8_t intensity)
+{
     if (intensity > 100) intensity = 100;
+
     motor1_intensity = intensity;
+
     if (motor1_state) {
-        uint32_t duty = (intensity * 255) / 100;
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, MOTOR1_CHANNEL, duty);
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, MOTOR1_CHANNEL);
+        mcpwm_set_duty(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_A, intensity);
+        mcpwm_set_duty_type(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
     }
+
     ESP_LOGI(TAG, "Motor1 intensity set to %d%%", intensity);
 }
 
-// ===================== MOTOR 2 =====================
-void vibration_set_state_motor2(bool on) {
+// ============================================================
+// MOTOR 2 CONTROL
+// ============================================================
+void vibration_set_state_motor2(bool on)
+{
     motor2_state = on;
-    uint32_t duty = on ? (motor2_intensity * 255) / 100 : 0;
-    ledc_set_duty(LEDC_LOW_SPEED_MODE, MOTOR2_CHANNEL, duty);
-    ledc_update_duty(LEDC_LOW_SPEED_MODE, MOTOR2_CHANNEL);
+
+    float duty = on ? motor2_intensity : 0;
+
+    mcpwm_set_duty(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_B, duty);
+    mcpwm_set_duty_type(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
+
     ESP_LOGI(TAG, "Motor2 %s", on ? "ON" : "OFF");
 }
 
-void vibration_set_intensity_motor2(uint8_t intensity) {
+void vibration_set_intensity_motor2(uint8_t intensity)
+{
     if (intensity > 100) intensity = 100;
+
     motor2_intensity = intensity;
+
     if (motor2_state) {
-        uint32_t duty = (intensity * 255) / 100;
-        ledc_set_duty(LEDC_LOW_SPEED_MODE, MOTOR2_CHANNEL, duty);
-        ledc_update_duty(LEDC_LOW_SPEED_MODE, MOTOR2_CHANNEL);
+        mcpwm_set_duty(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_B, intensity);
+        mcpwm_set_duty_type(VIB_MCPWM_UNIT, VIB_MCPWM_TIMER, MCPWM_OPR_B, MCPWM_DUTY_MODE_0);
     }
+
     ESP_LOGI(TAG, "Motor2 intensity set to %d%%", intensity);
 }

@@ -5,12 +5,16 @@
 #include "freertos/task.h"
 #include "Bluetooth.h"
 
+#define SENSORY_NO_VIBRATION 0x01
+#define SENSORY_CONSTANT_VIBRATION 0x02
+#define SENSORY_INCREASING_VIBRATION 0x03
+
 static const char *TAG = "SENSORY_PAD";
 
 static TaskHandle_t sensory_task_handle = NULL;
 static bool sensory_running = false;
 
-static uint8_t sensory_mode = CMD_SENSORY_NO_VIBRATION;
+static uint8_t sensory_mode = SENSORY_NO_VIBRATION;
 static uint8_t const_intensity = 0;
 static uint8_t inc_min_intensity = 0;
 static uint8_t inc_max_intensity = 100;
@@ -31,31 +35,34 @@ static void sensory_task(void *pvParameters) {
 
         switch (sensory_mode) {
 
-        case CMD_SENSORY_NO_VIBRATION:
+        case SENSORY_NO_VIBRATION:
             vibration_set_state_motor1(false);
             vibration_set_state_motor2(false);
             break;
 
-        case CMD_SENSORY_CONSTANT_VIBRATION:
+        case SENSORY_CONSTANT_VIBRATION:
             if (force > 0.3f) {
                 vibration_set_state_motor1(true);
                 vibration_set_state_motor2(true);
 
-                vibration_set_intensity_motor1(constant_intensity);
-                vibration_set_intensity_motor2(constant_intensity);
+                vibration_set_intensity_motor1(const_intensity);
+                vibration_set_intensity_motor2(const_intensity);
             } else {
                 vibration_set_state_motor1(false);
                 vibration_set_state_motor2(false);
             }
             break;
 
-        case CMD_SENSORY_INCREASING_VIBRATION:
+        case SENSORY_INCREASING_VIBRATION:
             if (force <= 0.3f) {
                 vibration_set_state_motor1(false);
                 vibration_set_state_motor2(false);
             } else {
                 vibration_set_state_motor1(true);
                 vibration_set_state_motor2(true);
+
+                float percent = force / 25.0f;
+                if (percent > 1.0f) percent = 1.0f;
 
                 // map 0–25 → 0–100%
                 intensity = inc_min_intensity + (uint8_t)((inc_max_intensity - inc_min_intensity) * percent);
@@ -85,7 +92,7 @@ void sensory_stop(void) {
 void sensory_no_vibration_start(void) {
     sensory_stop();
     if(sensory_task_handle == NULL){
-        sensory_mode = CMD_SENSORY_NO_VIBRATION;
+        sensory_mode = SENSORY_NO_VIBRATION;
         xTaskCreate(sensory_task, "sensory_task", 4096, NULL, 5, &sensory_task_handle);
         ESP_LOGI(TAG, "Sensory no vibration started");
     }else{
@@ -97,7 +104,7 @@ void sensory_no_vibration_start(void) {
 void sensory_constant_vibration_start(uint8_t intensity) {
     sensory_stop();
     if(sensory_task_handle == NULL){
-        sensory_mode = CMD_SENSORY_CONSTANT_VIBRATION;
+        sensory_mode = SENSORY_CONSTANT_VIBRATION;
         const_intensity = intensity;
         if (const_intensity > 100) const_intensity = 100;
         xTaskCreate(sensory_task, "sensory_task", 4096, NULL, 5, &sensory_task_handle);
@@ -111,7 +118,7 @@ void sensory_constant_vibration_start(uint8_t intensity) {
 void sensory_increasing_vibration_start(uint8_t min_int, uint8_t max_int) {
     sensory_stop();
     if(sensory_task_handle == NULL){
-        sensory_mode = CMD_SENSORY_INCREASING_VIBRATION;
+        sensory_mode = SENSORY_INCREASING_VIBRATION;
         inc_min_intensity = min_int;
         inc_max_intensity = max_int;
         if (inc_min_intensity > 100) inc_min_intensity = 100;

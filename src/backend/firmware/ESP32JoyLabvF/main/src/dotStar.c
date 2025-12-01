@@ -1,8 +1,8 @@
 #include "driver/spi_master.h"
 #include "esp_log.h"
 
-#define DATA_PIN   23   // DotStar DI 
-#define CLOCK_PIN  22   // DotStar CI 
+#define DATA_PIN   1   // DotStar DI 
+#define CLOCK_PIN  3   // DotStar CI 
 #define NUM_LEDS   72
 
 static const char *TAG = "DOTSTAR";

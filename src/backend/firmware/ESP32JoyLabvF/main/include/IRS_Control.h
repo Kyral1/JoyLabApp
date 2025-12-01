@@ -10,3 +10,6 @@ void irs_init(void);
 // Reads the current distance measurement in millimeters
 uint16_t irs_read_distance_mm(void);
 bool irs_is_hand_near(void);
+void stop_irs_continuous_task(void);
+void start_irs_continuous_task(void);
+void irs_continuous_task(void *pvParameters) ;

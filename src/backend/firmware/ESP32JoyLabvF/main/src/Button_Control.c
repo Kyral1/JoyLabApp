@@ -10,15 +10,15 @@ static const char *TAG = "BUTTON";
 #define DEBOUNCE_DELAY_MS 50
 
 //Button Pins Mapping (change when ESP is configured)
-const int button_pins[NUM_BUTTONS] = {2, 4, 15, 18};
+const int button_pins[NUM_BUTTONS] = {4, 0, 26, 27};
 
 //resets each pin before config
 void button_init_all(void) {
     for (int i = 0; i < NUM_BUTTONS; i++) {
         gpio_reset_pin(button_pins[i]);
         gpio_set_direction(button_pins[i], GPIO_MODE_INPUT);
-        gpio_pullup_en(button_pins[i]);   // use internal pull-up
-        gpio_pulldown_dis(button_pins[i]);
+        gpio_pullup_dis(button_pins[i]);   // use internal pull-up
+        gpio_pulldown_en(button_pins[i]);
         ESP_LOGI(TAG, "Button %d initialized on GPIO %d", i, button_pins[i]);
     }
 }
@@ -31,5 +31,5 @@ bool button_is_pressed(int index) {
     vTaskDelay(pdMS_TO_TICKS(DEBOUNCE_DELAY_MS));  // simple debounce
     int second_read = gpio_get_level(button_pins[index]);
 
-    return (first_read == 0 && second_read == 0);
+    return (first_read == 1 && second_read == 1);
 }

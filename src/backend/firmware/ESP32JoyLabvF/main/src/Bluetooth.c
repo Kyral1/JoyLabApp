@@ -17,6 +17,7 @@
 #include "IRS_Control.h"
 #include "ForceSensor_Control.h"
 #include "Game_Control.h"
+#include "Sensory_Pad.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -78,6 +79,7 @@ enum{
 enum{
     CMD_AU_SET_STATE = 0x01,
     CMD_AU_SET_VOL = 0x02,   //payload: volume 0-100
+    //CMD_AU_PLAY_SOUND = 0x03,
 };
 
 //commands - MOTOR
@@ -143,7 +145,7 @@ static ble_ctx_t s = {
   .force_ready = false,
 };
 
-static TaskHandle_t irs_task_handle = NULL;
+//static TaskHandle_t irs_task_handle = NULL;
 static TaskHandle_t force_task_handle = NULL;
 
 // advertise the 16-bit service UUID 
@@ -210,7 +212,7 @@ static void ensure_speaker_ready(void){
   if(!s.speaker_ready){speaker_init(); s.speaker_ready = true;}
 }
 
-static void ensure_irs_ready(void){
+void ensure_irs_ready(void){
   if(!s.irs_ready){irs_init(); s.irs_ready = true;}
 }
 
@@ -286,7 +288,7 @@ void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
 
 //BLE Notify helpers
 //IRS Distance notify:
-static void ble_notify_distance(uint16_t distance_mm) {
+void ble_notify_distance(uint16_t distance_mm) {
   if (!s.h_evts || s.conn_id == 0xFFFF) return;
     // Event payload: [event_code, low_byte, high_byte]
     uint8_t payload[3];
@@ -367,7 +369,9 @@ static void cmd_audio_set_state(uint8_t on){
   bool state = (on > 0);
   static uint8_t last_volume = 50;
   if (state){
+    //speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
     speaker_set_volume(last_volume);
+    speaker_beep_blocking(1000, 500);
   }else{ //muting to turn off
     last_volume = speaker_get_volume();
     speaker_mute();
@@ -412,14 +416,14 @@ static void cmd_motor_set_intensity(uint8_t motor_id, uint8_t intensity) {
     }
 }
 
-static void irs_continuous_task(void *pvParameters) {
+/*static void irs_continuous_task(void *pvParameters) {
     ensure_irs_ready();  
     while (1) {
         uint16_t distance = irs_read_distance_mm();
         ble_notify_distance(distance);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-}
+}*/
 
 static void force_continuous_task(void *pvParameters){
   ensure_force_ready();
@@ -430,7 +434,7 @@ static void force_continuous_task(void *pvParameters){
   }
 }
 
-static void start_irs_continuous_task(void) {
+/*static void start_irs_continuous_task(void) {
     if (irs_task_handle == NULL) {
         ESP_LOGI(TAG, "Starting IRS continuous updates...");
         xTaskCreate(
@@ -444,7 +448,7 @@ static void start_irs_continuous_task(void) {
     } else {
         ESP_LOGW(TAG, "IRS continuous task already running");
     }
-}
+}*/
 
 static void start_force_continuous_task(void){
   if(force_task_handle == NULL){
@@ -460,7 +464,7 @@ static void start_force_continuous_task(void){
 }
 
 // Stop continuous ranging + BLE updates
-static void stop_irs_continuous_task(void) {
+/*static void stop_irs_continuous_task(void) {
     if (irs_task_handle != NULL) {
         ESP_LOGI(TAG, "Stopping IRS continuous updates...");
         vTaskDelete(irs_task_handle);
@@ -468,7 +472,7 @@ static void stop_irs_continuous_task(void) {
     } else {
         ESP_LOGW(TAG, "IRS continuous task not running");
     }
-}
+}*/
 
 static void stop_force_continuous_task(void){
   if(force_task_handle != NULL){
@@ -574,7 +578,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
             if (len >= 1) sensory_constant_vibration_start(pl[0]);
             break;
           case CMD_SENSORY_INCREASING_VIBRATION:
-            sensory_increasing_vibration_start();
+            if (len >= 2) sensory_increasing_vibration_start(pl[0], pl[1]);
             break;
         }break;
 

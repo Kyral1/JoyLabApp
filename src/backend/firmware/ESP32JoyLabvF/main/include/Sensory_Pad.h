@@ -2,8 +2,11 @@
 
 #include <stdbool.h>
 
-static void no_vibration(void);
 
-static void constant_vibration(uint8_t intensity);
-
-static void increasing_vibration(uint8_t start_intensity, uint8_t end_intensity);
+void sensory_stop(void);
+//sensory no vibratio start
+void sensory_no_vibration_start(void);
+//sensory constant vibratio start
+void sensory_constant_vibration_start(uint8_t intensity);
+//sensory increasing vibratio start
+void sensory_increasing_vibration_start(uint8_t min_int, uint8_t max_int);
