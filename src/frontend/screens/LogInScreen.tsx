@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../../backend/app/services/supabase";
 
 type Props = {
   navigation: any;
@@ -8,20 +9,49 @@ type Props = {
 
 export default function LogInScreen({ navigation }: Props) {
   const { setUser } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Missing information", "Please enter your email and password.");
       return;
     }
 
-    // Backend will replace this with real Supabase login
-    setUser({
-      name: "JoyLab Friend",
-      email: email.trim(),
-    });
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        Alert.alert("Login error", error.message);
+        return;
+      }
+
+      const user = data.user; 
+
+      if (!user) {
+        Alert.alert("Login error", "User data not found.");
+        return;
+      } 
+
+      setUser({
+        name: user.email ?? "User", 
+        email: user.email ?? "",
+      });
+
+      navigation.replace("Home");
+    } catch (error) {
+      Alert.alert("Login error", "An unexpected error occurred.");
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

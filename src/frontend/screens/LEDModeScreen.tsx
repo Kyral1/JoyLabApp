@@ -52,26 +52,33 @@ export default function LEDModeScreen() {
         //when the game stops, the variable hit is the number of points, and attempt is the number of tries (based on IR sensor)
         //everytime the game stops, aka when this function is called you can add those numbers with a date and time stamp as an entry to a DB
         try {
+          // get logged in user
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+          if (userError || !user) {
+            console.error("User not logged in; cannot save stats.");
+            return;
+          }
           const timestamp = new Date().toISOString();
 
-          const{ data, error } = await supabase
-            .from("stats")
-            .insert([
-              {
-                hits: hits,
-                attempts: attempts,
-                created_at: timestamp,
-                mode: "whack-a-mole"
-              },
-            ]);
+          const { error } = await supabase.from("stats").insert([
+            {
+              user_id: user.id,
+              hits: hits,
+              attempts: attempts,
+              created_at: timestamp,
+              mode: "whack-a-mole"
+            },
+          ]);
+          
           if (error) {
             console.error("Error inserting stats:", error.message);
           } else {
-            console.log("Stats inserted successfully:", data);
-          }
+            console.log("Stats inserted successfully");
+          } 
         } catch (error) {
           console.error("Error inserting stats:", error);
-        }
+        };       
     };
  return (
     <ScrollView contentContainerStyle={styles.container}>

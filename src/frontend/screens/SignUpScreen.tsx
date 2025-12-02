@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../../backend/app/services/supabase";
 
 type Props = {
   navigation: any;
@@ -13,13 +14,14 @@ export default function SignUpScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.toLowerCase());
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert("Missing information", "Please fill out all fields.");
       return;
@@ -46,11 +48,49 @@ export default function SignUpScreen({ navigation }: Props) {
       return;
     }
 
-    // 🔌 Backend developer will replace this with Supabase signup
-    setUser({
-      name: name.trim(),
-      email: email.trim(),
-    });
+    try {
+      setLoading(true);
+      const {data, error} = await supabase.auth.signUp({
+        email: email.trim(),
+        password,   
+      });
+
+      if (error) {
+        Alert.alert("Signup error", error.message);
+        return;
+      }
+
+      const user = data.user;
+      if (!user) {
+        Alert.alert("Error", "User not created.");
+        return;
+      }
+
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: user.id,
+          username: name.trim(),
+        },
+      ]);
+
+      if (profileError) {
+        Alert.alert("Profile error", profileError.message);
+        return;
+      }
+
+      // 3️⃣ Save logged-in state
+      setUser({
+        name: name.trim(),
+        email: user.email ?? "",
+      });
+
+      // 4️⃣ Navigate away
+      navigation.replace("Home");
+    } catch (error) {
+      Alert.alert("Signup error", "An unexpected error occurred.");
+      console.error("Signup error:", error);
+    } finally {
+        setLoading(false); 
   };
 
   return (
@@ -102,7 +142,7 @@ export default function SignUpScreen({ navigation }: Props) {
       </TouchableOpacity>
     </View>
   );
-}
+}}; 
 
 const styles = StyleSheet.create({
   container: {
