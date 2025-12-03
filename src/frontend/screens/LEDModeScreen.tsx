@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
+import { supabase } from "../../backend/app/services/supabase";
 //import { start } from "repl";
 
 
@@ -56,6 +57,34 @@ export default function LEDModeScreen() {
         setGameRunning(false);
         //when the game stops, the variable hit is the number of points, and attempt is the number of tries (based on IR sensor)
         //everytime the game stops, aka when this function is called you can add those numbers with a date and time stamp as an entry to a DB
+        try {
+          // get logged in user
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+          if (userError || !user) {
+            console.error("User not logged in; cannot save stats.");
+            return;
+          }
+          const timestamp = new Date().toISOString();
+
+          const { error } = await supabase.from("stats").insert([
+            {
+              user_id: user.id,
+              hits: hits,
+              attempts: attempts,
+              created_at: timestamp,
+              mode: "whack-a-mole"
+            },
+          ]);
+          
+          if (error) {
+            console.error("Error inserting stats:", error.message);
+          } else {
+            console.log("Stats inserted successfully");
+          } 
+        } catch (error) {
+          console.error("Error inserting stats:", error);
+        };       
     };
 
     // LED Regular Mode

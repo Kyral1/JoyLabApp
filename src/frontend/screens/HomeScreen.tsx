@@ -1,11 +1,14 @@
 // src/frontend/screens/HomeScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Button, Alert, Pressable, TouchableOpacity, Modal} from 'react-native';
+import { View, Text, StyleSheet, Alert, Pressable, TouchableOpacity, Modal } from 'react-native';
 import { bleService } from '../services/BLEService';
 import { bleWristbandService } from '../services/BLEWristBandService';
+import { useAuth } from '../context/AuthContext';
 
 export default function HomeScreen() {
   console.log("🎮 HomeScreen loaded!");
+  const { user } = useAuth();
+
   const [toyConnected, setToyConnected] = useState(false);
   const [bandConnected, setBandConnected] = useState(false);
   const [connectingToy, setConnectingToy] = useState(false);
@@ -27,26 +30,36 @@ export default function HomeScreen() {
   };
 
   const handleConnectBand = async () => {
-    try{
+    try {
       setConnectingBand(true);
       await bleWristbandService.connect();
       setBandConnected(true);
       Alert.alert('BLE', 'Connected to JoyLab WristBand ✅');
-    } catch (e: any){
+    } catch (e: any) {
       Alert.alert('BLE Error', e?.message ?? String(e));
     } finally {
       setConnectingBand(false);
     }
   }
 
-return (
+  return (
     <View style={styles.container}>
       {/* Header */}
-      <Text style={styles.welcomeText}>Welcome to</Text>
-      <Text style={styles.logoText}>
-        <Text style={{ color: '#4A7FFB' }}>Joy</Text>
-        <Text style={{ color: '#E74C3C' }}>LAB</Text>
+      <Text style={styles.welcomeText}>
+        {user?.name ? `Welcome, ${user.name}` : 'Welcome to'}
       </Text>
+      {!user?.name && (
+        <Text style={styles.logoText}>
+          <Text style={{ color: '#4A7FFB' }}>Joy</Text>
+          <Text style={{ color: '#E74C3C' }}>LAB</Text>
+        </Text>
+      )}
+      {user?.name && (
+        <Text style={styles.subTitle}>
+          <Text style={{ color: '#4A7FFB' }}>Joy</Text>
+          <Text style={{ color: '#E74C3C' }}>LAB</Text> is ready to play!
+        </Text>
+      )}
 
       {/* Buttons */}
       <TouchableOpacity
@@ -168,5 +181,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+  },
+  subTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 30,
   },
 });
