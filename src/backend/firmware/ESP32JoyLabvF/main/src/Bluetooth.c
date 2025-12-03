@@ -369,7 +369,7 @@ static void cmd_audio_set_state(uint8_t on){
   bool state = (on > 0);
   static uint8_t last_volume = 50;
   if (state){
-    //speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
+    speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
     speaker_set_volume(last_volume);
     speaker_beep_blocking(1000, 500);
   }else{ //muting to turn off

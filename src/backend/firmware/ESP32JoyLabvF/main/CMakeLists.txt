@@ -16,11 +16,11 @@ idf_component_register(
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-maybe-uninitialized)
 
-# === Embed WAV Files ===
-#set(WAV_FILES
-#    "${CMAKE_CURRENT_LIST_DIR}/wavFiles/AlarmSound.wav")
+ #=== Embed WAV Files ===
+set(WAV_FILES
+    "${CMAKE_CURRENT_LIST_DIR}/wavFiles/AlarmSound.wav")
 
-#foreach(wav ${WAV_FILES})
-#    message(STATUS "Embedding WAV: ${wav}")
-#    target_add_binary_data(${COMPONENT_LIB} ${wav} BINARY)
-#endforeach()
+foreach(wav ${WAV_FILES})
+    message(STATUS "Embedding WAV: ${wav}")
+    target_add_binary_data(${COMPONENT_LIB} ${wav} BINARY)
+endforeach()

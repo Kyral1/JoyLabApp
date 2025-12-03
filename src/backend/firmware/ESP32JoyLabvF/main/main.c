@@ -30,7 +30,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
 
-    while (1){
+    /*while (1){
         speaker_init();
         speaker_set_volume(70);
         speaker_beep_blocking(1000, 500);
@@ -39,7 +39,7 @@ void app_main(void)
 
         speaker_set_volume(100);
         speaker_beep_blocking(1000, 500);
-    }
+    }*/
 
     /*led_init();
 
