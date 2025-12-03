@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
-type Props = {
+/*type Props = {
   navigation: any; // keep it simple for now
-};
+};*/
 
-export default function AuthLandingScreen({ navigation }: Props) {
+export default function AuthLandingScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.welcomeText}>Welcome to</Text>
@@ -23,7 +23,7 @@ export default function AuthLandingScreen({ navigation }: Props) {
 
       <TouchableOpacity
         style={[styles.button, styles.outline]}
-        onPress={() => navigation.navigate("Signup")}
+        onPress={() => navigation.navigate("SignUp")}
       >
         <Text style={styles.outlineText}>Sign Up</Text>
       </TouchableOpacity>

@@ -12,7 +12,7 @@ export default function AppNavigator() {
   return (
     <Tab.Navigator>
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Game Modes" component={GameModesScreen} />
+      <Tab.Screen name="GameModesHome"  component={GameModesScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
       <Tab.Screen name="Statistics" component={StatisticsScreen} />
       <Tab.Screen name="Test Screen" component={TestScreen} />

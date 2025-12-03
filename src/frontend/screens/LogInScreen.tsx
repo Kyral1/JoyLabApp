@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "reac
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../backend/app/services/supabase";
 
-type Props = {
+/*type Props = {
   navigation: any;
-};
+};*/
 
-export default function LogInScreen({ navigation }: Props) {
+export default function LogInScreen({ navigation }: any) {
   const { setUser } = useAuth();
 
   const [email, setEmail] = useState("");
@@ -79,7 +79,7 @@ export default function LogInScreen({ navigation }: Props) {
         <Text style={styles.primaryButtonText}>Log In</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+      <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
         <Text style={styles.switchText}>
           Don’t have an account? <Text style={{ color: "#4A7FFB" }}>Sign up</Text>
         </Text>

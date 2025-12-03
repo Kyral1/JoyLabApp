@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { GameModesStackParamList } from '../navigation/GameModesStack';
 
-type Props = NativeStackScreenProps<GameModesStackParamList, 'GameModesHome'>;
+//type Props = NativeStackScreenProps<GameModesStackParamList, 'GameModesHome'>;
 
-export default function GameModesScreen({ navigation }: Props) {
+export default function GameModesScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Modes</Text>

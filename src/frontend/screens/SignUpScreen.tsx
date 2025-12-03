@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "reac
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../../backend/app/services/supabase";
 
-type Props = {
+/*type Props = {
   navigation: any;
-};
+};*/
 
-export default function SignUpScreen({ navigation }: Props) {
+export default function SignUpScreen({ navigation }: any) {
   const { setUser } = useAuth();
 
   const [name, setName] = useState("");
@@ -50,9 +50,19 @@ export default function SignUpScreen({ navigation }: Props) {
 
     try {
       setLoading(true);
-      const {data, error} = await supabase.auth.signUp({
+
+      /*const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
-        password,   
+        password,
+      });*/
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),   // this goes into raw_user_meta_data
+          },
+        },
       });
 
       if (error) {
@@ -66,7 +76,7 @@ export default function SignUpScreen({ navigation }: Props) {
         return;
       }
 
-      const { error: profileError } = await supabase.from("profiles").insert([
+      /*const { error: profileError } = await supabase.from("profiles").insert([
         {
           id: user.id,
           username: name.trim(),
@@ -76,21 +86,22 @@ export default function SignUpScreen({ navigation }: Props) {
       if (profileError) {
         Alert.alert("Profile error", profileError.message);
         return;
-      }
+      }*/
 
-      // 3️⃣ Save logged-in state
       setUser({
         name: name.trim(),
         email: user.email ?? "",
       });
 
-      // 4️⃣ Navigate away
-      navigation.replace("Home");
+      //navigation.replace("Main");
+
     } catch (error) {
       Alert.alert("Signup error", "An unexpected error occurred.");
       console.error("Signup error:", error);
+
     } finally {
-        setLoading(false); 
+      setLoading(false);
+    }
   };
 
   return (
@@ -142,7 +153,8 @@ export default function SignUpScreen({ navigation }: Props) {
       </TouchableOpacity>
     </View>
   );
-}}; 
+}
+
 
 const styles = StyleSheet.create({
   container: {

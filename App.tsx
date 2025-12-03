@@ -14,7 +14,7 @@ import SupabaseTestScreen from "./src/frontend/screens/SupaBaseTestScreen";
 
 import AuthLandingScreen from "./src/frontend/screens/AuthLandingScreen";
 import LoginScreen from "./src/frontend/screens/LogInScreen";
-import SignupScreen from "./src/frontend/screens/SignUpScreen";
+import SignUpScreen from "./src/frontend/screens/SignUpScreen";
 import { AuthProvider, useAuth } from "./src/frontend/context/AuthContext";
 
 const Tab = createBottomTabNavigator();
@@ -118,7 +118,7 @@ function RootNavigator() {
         <>
           <Stack.Screen name="AuthLanding" component={AuthLandingScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
         </>
       )}
     </Stack.Navigator>
