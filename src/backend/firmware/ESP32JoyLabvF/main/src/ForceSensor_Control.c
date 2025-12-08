@@ -9,17 +9,32 @@
 #define TAG "FORCE_SENSOR"
 
 void force_sensor_init(void) {
+
     i2c_config_t conf = {
-    .mode = I2C_MODE_MASTER,
-    .sda_io_num = SDA_PIN,         // select GPIO specific to your project
-    .sda_pullup_en = GPIO_PULLUP_ENABLE,
-    .scl_io_num = SCL_PIN,         // select GPIO specific to your project
-    .scl_pullup_en = GPIO_PULLUP_ENABLE,
-    .master.clk_speed = 100000 //100kHz -- standard
-    // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
-};
+        .mode = I2C_MODE_MASTER,
+        .sda_io_num = SDA_PIN,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_io_num = SCL_PIN,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
+        .master.clk_speed = 100000,
+        .clk_flags = 0
+    };
+
+    // APPLY CONFIG
+    ESP_ERROR_CHECK(i2c_param_config(I2C_PORT, &conf));
+
+    // INSTALL DRIVER
+    ESP_ERROR_CHECK(i2c_driver_install(
+        I2C_PORT,
+        conf.mode,
+        0,      // RX buffer (not used in master mode)
+        0,      // TX buffer (not used in master mode)
+        0       // no flags
+    ));
+
     ESP_LOGI(TAG, "Force sensor initialized (I2C 0x%02X)", FORCE_SENSOR_ADDR);
 }
+
 
 float force_sensor_read(){
     uint8_t data[2];
@@ -36,6 +51,6 @@ float force_sensor_read(){
     uint16_t raw = ((data[0] & 0x3F) << 8) | data[1];
     float pressure = ((float)raw / 16383.0f) * 25.0f;
 
-    return pressure;
+    return raw;
 }
 

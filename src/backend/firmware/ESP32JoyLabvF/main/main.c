@@ -9,6 +9,7 @@
 #include "driver/gpio.h"
 #include "VibrationMotor.h"
 #include "Speaker_Control.h"
+#include "ForceSensor_Control.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
@@ -29,6 +30,14 @@ void app_main(void)
     ESP_ERROR_CHECK(bluetooth_init());
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
+
+    force_sensor_init();
+
+    while(1){
+        float pressure = force_sensor_read();
+        ESP_LOGI(TAG, "Force Sensor Pressure: %.2f N", pressure);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 
     /*while (1){
         speaker_init();

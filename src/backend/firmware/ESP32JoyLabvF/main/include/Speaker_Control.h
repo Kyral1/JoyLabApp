@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 // Extern linker symbols created by target_add_binary_data
-extern const uint8_t _binary_AlarmSound_wav_start[];
-extern const uint8_t _binary_AlarmSound_wav_end[];
+//extern const uint8_t _binary_AlarmSound_wav_start[];
+//extern const uint8_t _binary_AlarmSound_wav_end[];
 
 void speaker_init(void);
 void speaker_set_volume(uint8_t level);   // level: 0–100%

@@ -24,7 +24,7 @@ static void LED_regular_game_task(void *pvParameters) {
     button_init_all();    // from Button_Control.c
     load_button_states_from_nvs(); 
     led_clear();
-    //irs_init();
+    irs_init();
 
     led_reg_game_running = true;
     ESP_LOGI(TAG, "Starting Regular LED game!");
@@ -74,7 +74,7 @@ static void whackamole_game_task(void *pvParameters) {
     button_init_all();    // from Button_Control.c
     load_button_states_from_nvs(); 
     led_clear();
-    //irs_init();
+    irs_init();
 
     whack_game_running = true;
     ESP_LOGI(TAG, "Starting Whack-A-Mole game!");
@@ -102,16 +102,17 @@ static void whackamole_game_task(void *pvParameters) {
 
         // Wait for correct button press
         while (whack_game_running) {
-            //bool near = irs_is_hand_near();  
+            bool near = irs_is_hand_near();  
             bool pressed = button_is_pressed(target);
             //ESP_LOGI(TAG, "inside while loop");
 
-            /*if (near && !attempt_logged) {
+            if (near && !attempt_logged) {
                 led_mode_attempts ++;
                 evt_notify_led_whack_result(led_mode_points, led_mode_attempts);
                 attempt_logged = true;
                 ESP_LOGI(TAG, "Attempt detected for button %d", target);
-            }*/
+            }
+            
             if(pressed){
                 ESP_LOGI(TAG, "in pressed loop");
                 led_mode_points ++;
