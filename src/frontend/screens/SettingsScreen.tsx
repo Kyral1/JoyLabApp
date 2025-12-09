@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal, Alert} from 'react-native';
+import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal, Alert, Touchable} from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
@@ -212,7 +212,11 @@ useEffect(() => {
     },
   } as const;
 
-
+  const handlePlayPreview = () => {
+    const idx = selectedSoundButton === "All" ? 111 : parseInt(selectedSoundButton)-1;
+    const frame = [0x02, 0x04, 0x01, idx];
+    sendFrame(frame);
+  }
 
     //sensory pad settings 
     const [sensoryMode, setSensoryMode] = useState(0); //0=off,1=no vib,2=constant vib, 3=increasing vib
@@ -484,6 +488,9 @@ useEffect(() => {
                 ))}
               </Picker>
             </View>
+            <TouchableOpacity style={styles.previewBtn} onPress={handlePlayPreview}>
+              <Text style={styles.buttonText}>Play Sound</Text>
+            </TouchableOpacity>
         </View>
 
         {/* ---------------- SENSORY PAD CARD ---------------- */}
