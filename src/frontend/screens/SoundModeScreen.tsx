@@ -1,53 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 
 export default function SoundModeScreen() {
-
-  // Constants
-  const [selectedButton, setSelectedButton] = useState('All');
-  type CategoryKey = keyof typeof soundBank;
-  const [selectedCategory, setSelectedCategory] = useState<CategoryKey>("animals");
-  const [selectedSound, setSelectedSound] = useState("Dog");
-
-  // Soundbank
-  const soundBank = {
-    animals: {
-      id: 0x01,
-      label: "Animals",
-      sounds: [
-        { id: 0x00, label: "Dog" },
-        { id: 0x01, label: "Cat" },
-        { id: 0x02, label: "Cow" },
-      ],
-    },
-    instruments: {
-      id: 0x02,
-      label: "Instruments",
-      sounds: [
-        { id: 0x00, label: "Piano" },
-        { id: 0x01, label: "Drum" },
-        { id: 0x02, label: "Guitar" },
-      ],
-    },
-    beats: {
-      id: 0x03,
-      label: "Beats",
-      sounds: [
-        { id: 0x00, label: "Beat 1" },
-        { id: 0x01, label: "Beat 2" },
-        { id: 0x02, label: "Beat 3" },
-      ],
-    },
-  } as const;
-
-  const currentCategory =
-    soundBank[selectedCategory] ?? soundBank.animals;
-
-  // also guard here
-  const soundsForPicker = currentCategory?.sounds ?? [];
+  const [gameRunning, setGameRunning] = useState(false);
 
   // BLE Frame Function 
   const sendFrame = async (frame: number[]) => {
@@ -58,6 +16,17 @@ export default function SoundModeScreen() {
       console.error('Error sending frame:', e?.message ?? String(e));
     }
   };
+
+  const startSoundGame = async () => {
+    await sendFrame([0x04, 0x06, 0x00]); // example CMD: start whack
+    //await sendFrame([0x04, 0x05, 0x00]); //stop reg
+      setGameRunning(true);
+    };
+
+    const stopSoundGame = async () => {
+        await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop
+        setGameRunning(false);
+    };
 
   // Handle BLE notifications - if no notifications for sound can delete
   useEffect(() => {
@@ -71,70 +40,45 @@ export default function SoundModeScreen() {
     return () => bleService.disableNotifications();
   }, []);
 
-  const handlePlaySound = () => {
-    const idx = selectedButton === "All" ? 111 : parseInt(selectedButton) - 1;
-    const sound = currentCategory.sounds.find((s) => s.label.toLowerCase() === selectedSound.toLowerCase());
-    const soundId = sound ? sound.id : 0x00;
-    const categoryId = currentCategory.id;
-
-    // EXAMPLE FRAME: [SOUND_CAT, SUBCMD, TARGET, CATEGORY, SOUND]
-    const frame = [0x02, 0x01, idx, categoryId, soundId];
-    sendFrame(frame);
-  };
-
-  // If category changes, make sure we don’t hold onto an old sound name
-  useEffect(() => {
-    // Default to first sound in that category
-    setSelectedSound(currentCategory.sounds[0].label.toLowerCase());
-  }, [selectedCategory]);
-
-
-  return (
+return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.sectionHeader}>Sounds</Text>
-        {/* Button Selector */}
-        <View style={styles.row}>
-          <Text style={styles.label}>Select Button:</Text>
-          <Picker
-            selectedValue={selectedButton}
-            style={styles.picker}
-            onValueChange={(val) => setSelectedButton(val)}
-          >
-            <Picker.Item label="All" value="All" />
-            <Picker.Item label="Button 1" value="1" />
-            <Picker.Item label="Button 2" value="2" />
-            <Picker.Item label="Button 3" value="3" />
-            <Picker.Item label="Button 4" value="4" />
-          </Picker>
+        <Text style={styles.sectionHeader}>Sound Mode Game</Text>
+
+        {/* Description */}
+        <Text style={styles.description}>
+          Description: Choose sounds for the buttons in settings. Press Buttons to turn on and off sounds.
+        </Text>
+
+        {/* Scoreboard */}
+        <View style={styles.scoreboard}>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Hits</Text>
+            <Text style={styles.scoreValue}>{"0"}</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Attempts</Text>
+            <Text style={styles.scoreValue}>{"0"}</Text>
+          </View>
         </View>
 
-        {/* Category selector */}
-        <View style={styles.row}>
-          <Text style={styles.label}>Category:</Text>
-          <Picker
-            selectedValue={selectedCategory}
-            style={styles.picker}
-            onValueChange={(val) => setSelectedCategory(val)}
+        {/* Start / Stop buttons */}
+        <View style={[styles.row, { marginTop: 20 }]}>
+          <TouchableOpacity
+            style={[styles.button, { opacity: gameRunning ? 0.5 : 1 }]}
+            onPress={startSoundGame}
+            disabled={gameRunning}
           >
-            {Object.entries(soundBank).map(([key, cat]) => (
-              <Picker.Item key={key} label={cat.label} value={key} />
-            ))}
-          </Picker>
-        </View>
+            <Text style={styles.buttonText}>Start</Text>
+          </TouchableOpacity>
 
-        {/* Sound selector */}
-        <View style={styles.row}>
-          <Text style={styles.label}>Sound:</Text>
-          <Picker
-            selectedValue={selectedSound}
-            style={styles.picker}
-            onValueChange={(val) => setSelectedSound(val)}
+          <TouchableOpacity
+            style={[styles.buttonOff, { opacity: gameRunning ? 1 : 0.5 }]}
+            onPress={stopSoundGame}
+            disabled={!gameRunning}
           >
-            {soundsForPicker.map((s) => (
-              <Picker.Item key={s.id} label={s.label} value={s.label.toLowerCase()} />
-            ))}
-          </Picker>
+            <Text style={styles.buttonText}>Stop</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -144,21 +88,20 @@ export default function SoundModeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFF',
+    backgroundColor: "#F9FAFF",
     paddingTop: 50,
-    paddingHorizontal: 30
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: 30
+    paddingHorizontal: 30,
   },
   sectionHeader: {
     fontSize: 20,
     fontWeight: "600",
     marginBottom: 10,
     color: "#2C3E50",
+  },
+  description: {
+    fontSize: 14,
+    color: "#5D6D7E",
+    marginBottom: 20,
   },
   card: {
     backgroundColor: "#FFFFFF",
@@ -170,19 +113,47 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  label: {
-    fontSize: 18,
-    color: '#2C3E50',
-    fontWeight: '500',
-  },
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
-    marginVertical: 8,
   },
-  picker: {
-    height: 90,
-    width: 140,
+  button: {
+    backgroundColor: "#C9D6FF",
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    marginRight: 10,
+  },
+  buttonOff: {
+    backgroundColor: "#E6B0AA",
+    borderRadius: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+  },
+  buttonText: {
+    color: "#2C3E50",
+    fontWeight: "600",
+  },
+  scoreboard: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    marginBottom: 12,
+  },
+  scoreBox: {
+    backgroundColor: "#F4F6F7",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  scoreLabel: {
+    fontSize: 14,
+    color: "#566573",
+  },
+  scoreValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#2C3E50",
   },
 });
