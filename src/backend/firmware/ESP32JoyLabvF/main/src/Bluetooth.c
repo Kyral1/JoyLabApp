@@ -18,6 +18,7 @@
 #include "ForceSensor_Control.h"
 #include "Game_Control.h"
 #include "Sensory_Pad.h"
+#include "buttonSound.h"
 
 #define TAG "BT_JOYLAB"
 
@@ -97,6 +98,8 @@ enum{
     //CMD_DUAL_MODE = 0x05,
     CMD_LED_REG_START = 0x04,
     CMD_LED_REG_STOP = 0x05,
+    CMD_SOUND_START = 0x06,
+    CMD_SOUND_STOP = 0x07,
 };
 
 //EVENTS (esp32 -> phone)
@@ -208,7 +211,7 @@ static void ensure_motor02_ready(void){
 }
 
 
-static void ensure_speaker_ready(void){
+void ensure_speaker_ready(void){
   if(!s.speaker_ready){speaker_init(); s.speaker_ready = true;}
 }
 
@@ -566,6 +569,12 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_LED_REG_STOP:
           stop_led_reg_game();
+          break;
+        case CMD_SOUND_START:
+          start_sound_game();
+          break;
+        case CMD_SOUND_STOP:
+          stop_sound_game();
           break;
       }break;
 
