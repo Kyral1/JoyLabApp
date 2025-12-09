@@ -1,3 +1,5 @@
+#define MINIMP3_IMPLEMENTATION
+#define MINIMP3_ONLY_MP3
 #include "Speaker_Control.h"
 #include "driver/dac.h"
 #include "driver/i2s.h"
@@ -5,11 +7,14 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include "math.h"
+#include "minimp3.h"
+#include "minimp3_ex.h"
 
 static const char *TAG = "SPEAKER";
 #define SPEAKER_DAC_CHANNEL DAC_CHANNEL_1 //25
 #define I2S_NUM I2S_NUM_0
 static uint8_t speaker_volume = 0;
+mp3dec_t mp3d;
 
 /*void speaker_init(void) {
     dac_output_enable(SPEAKER_DAC_CHANNEL);
@@ -56,7 +61,29 @@ void speaker_mute(void) {
     ESP_LOGI(TAG, "Speaker muted (DAC output 0V).");
 }
 
+void speaker_play_mp3_file(const char *path){
+    mp3dec_file_info_t info;
+    memset(&info, 0, sizeof(info));
+    int res = mp3dec_load(&mp3d, path, &info, NULL, NULL);
+    if(res){
+        ESP_LOGE(TAG, "Failed to load MP3 file: %s", path);
+        return;
+    }
 
+    i2s_set_clk(I2S_NUM_0, info.hz, I2S_BITS_PER_SAMPLE_16BIT, 1);
+    size_t written;
+    for (int i = 0; i<info.samples; i++){
+        int16_t s = info.buffer[i];
+        uint8_t out = (uint8_t)((((s + 32768) >> 8) * speaker_volume) / 255);
+        i2s_write(I2S_NUM_0, &out, 1, &written, portMAX_DELAY);
+    }
+
+    free(info.buffer);
+    i2s_zero_dma_buffer(I2S_NUM_0);
+    ESP_LOGI(TAG, "MP3 playback finished");
+}
+
+/*
 void speaker_play_wav_mem(const uint8_t *data_start, const uint8_t *data_end)
 {
     size_t len = data_end - data_start;
@@ -81,7 +108,7 @@ void speaker_play_wav_mem(const uint8_t *data_start, const uint8_t *data_end)
     }
 
     i2s_zero_dma_buffer(I2S_NUM_0);
-}
+}*/
 
 void speaker_beep_blocking(uint16_t freq_hz, uint32_t duration_ms)
 {
