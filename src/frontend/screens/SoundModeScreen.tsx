@@ -5,6 +5,7 @@ import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 
 export default function SoundModeScreen() {
+
   // Constants
   const [selectedButton, setSelectedButton] = useState('All');
   type CategoryKey = keyof typeof soundBank;

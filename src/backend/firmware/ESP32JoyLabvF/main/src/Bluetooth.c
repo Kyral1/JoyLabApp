@@ -81,6 +81,7 @@ enum{
     CMD_AU_SET_STATE = 0x01,
     CMD_AU_SET_VOL = 0x02,   //payload: volume 0-100
     //CMD_AU_PLAY_SOUND = 0x03,
+    CMD_AU_SET_SOUND_FILE = 0x03, //payload: filename
 };
 
 //commands - MOTOR
@@ -388,6 +389,21 @@ static void cmd_audio_set_volume(uint8_t vol) {
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
+static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
+  if(idx == 111){
+    for(int i = 0; i<NUM_BUTTONS; i++){
+      ESP_LOGI(TAG, "(ALL) Setting sound for button %d to %s", i, filename);
+      set_button_sound(i, filename);
+      save_button_sound_persistent(i, filename);
+    }
+  }else if(idx<4){
+    ESP_LOGI(TAG, "Setting sound for button %d to %s", idx, filename);
+    set_button_sound(idx, filename);
+    save_button_sound_persistent(idx, filename);
+  }
+
+}
+
 static void cmd_motor_set_state(uint8_t motor_id, uint8_t on) {
     ensure_motor01_ready();
     ensure_motor02_ready();
@@ -516,6 +532,9 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_AU_SET_VOL:
           if (len >= 1) cmd_audio_set_volume(pl[0]);
+          break;
+        case CMD_AU_SET_SOUND_FILE:
+          if(len>=2) cmd_audio_set_sound_file(pl[0], pl[1]); //pl[0]=filename, pl[1]=button index
           break;
       }
       break;
