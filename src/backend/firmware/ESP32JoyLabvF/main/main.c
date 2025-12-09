@@ -51,6 +51,9 @@ void app_main(void)
     filesystem_init();
     speaker_init();
     
+    load_button_sounds_from_nvs();
+    load_button_states_from_nvs(); 
+
     //force_sensor_init();
 
     /*while(1){

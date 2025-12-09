@@ -16,11 +16,6 @@ static const char *TAG = "SPEAKER";
 static uint8_t speaker_volume = 0;
 mp3dec_t mp3d;
 
-/*void speaker_init(void) {
-    dac_output_enable(SPEAKER_DAC_CHANNEL);
-    dac_output_voltage(SPEAKER_DAC_CHANNEL, 0);
-}*/
-
 void speaker_init(void)
 {
     // Configure I2S -> DAC
@@ -84,33 +79,6 @@ void speaker_play_mp3_file(const char *path){
     i2s_zero_dma_buffer(I2S_NUM_0);
     ESP_LOGI(TAG, "MP3 playback finished");
 }
-
-/*
-void speaker_play_wav_mem(const uint8_t *data_start, const uint8_t *data_end)
-{
-    size_t len = data_end - data_start;
-    const uint8_t *ptr = data_start + 44;   // skip WAV header
-    const uint8_t *end = data_end;
-
-    int16_t sample16;
-    uint8_t out;
-    size_t written;
-
-    while (ptr + 2 <= end)
-    {
-        sample16 = ptr[0] | (ptr[1] << 8);  // little-endian 16-bit
-        ptr += 2;
-
-        int32_t s = sample16 + 32768;      // signed → unsigned
-        s >>= 8;                           // 16bit → 8bit
-        s = (s * speaker_volume) / 255;    // apply volume
-
-        out = (uint8_t)s;
-        i2s_write(I2S_NUM_0, &out, 1, &written, portMAX_DELAY);
-    }
-
-    i2s_zero_dma_buffer(I2S_NUM_0);
-}*/
 
 void speaker_beep_blocking(uint16_t freq_hz, uint32_t duration_ms)
 {
