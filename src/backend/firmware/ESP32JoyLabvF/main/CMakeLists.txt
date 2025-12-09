@@ -1,6 +1,6 @@
 idf_component_register(
     SRCS "main.c" "src/Bluetooth.c" "src/Button_Control.c" "src/dotStar.c" "src/ForceSensor_Control.c" "src/IRS_Control.c" "src/LED_Control.c" "src/Speaker_Control.c" "src/VibrationMotor.c" 
-    "src/Game_Control.c" 
+    "src/Game_Control.c" "src/buttonSound.c"
     "src/Sensory_Pad.c" 
     "../external/VL53L0X_1.0.4/Api/core/src/vl53l0x_api.c"
     "../external/VL53L0X_1.0.4/Api/core/src/vl53l0x_api_calibration.c"

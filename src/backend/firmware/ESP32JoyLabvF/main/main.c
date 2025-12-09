@@ -9,6 +9,7 @@
 #include "driver/gpio.h"
 #include "VibrationMotor.h"
 #include "Speaker_Control.h"
+#include "buttonSound.h"
 #include "ForceSensor_Control.h"
 #include "esp_spiffs.h"
 

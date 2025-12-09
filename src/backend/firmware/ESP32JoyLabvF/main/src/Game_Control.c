@@ -3,6 +3,7 @@
 #include "Button_Control.h"
 #include "esp_log.h"
 #include "buttonSound.h"
+#include "speaker_control.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_random.h"
@@ -24,7 +25,7 @@ static bool sound_reg_game_running = false;
 static int sound_reg_points = 0;
 
 static void sound_game_task(void *pvParameters) {
-    ensure_speaker_ready();   // from bluetooth.c
+    //ensure_speaker_ready();   // from bluetooth.c
     button_init_all();    // from Button_Control.c
     load_button_sounds_from_nvs();
 
