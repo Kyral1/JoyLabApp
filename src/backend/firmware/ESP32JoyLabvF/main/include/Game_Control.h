@@ -9,3 +9,6 @@ void stop_whackamole_game(void);
 
 void stop_led_reg_game(void);
 void start_led_reg_game(void);
+
+void start_sound_game(void);
+void stop_sound_game(void);

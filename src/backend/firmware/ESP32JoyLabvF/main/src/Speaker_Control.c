@@ -14,6 +14,7 @@ static const char *TAG = "SPEAKER";
 #define SPEAKER_DAC_CHANNEL DAC_CHANNEL_1 //25
 #define I2S_NUM I2S_NUM_0
 static uint8_t speaker_volume = 0;
+static volatile bool stop_audio_flag = false;
 mp3dec_t mp3d;
 
 void speaker_init(void)
@@ -56,6 +57,11 @@ void speaker_mute(void) {
     ESP_LOGI(TAG, "Speaker muted (DAC output 0V).");
 }
 
+void speaker_stop(void) {
+    stop_audio_flag = true;
+    i2s_zero_dma_buffer(I2S_NUM_0);
+}
+
 void speaker_play_mp3_file(const char *path){
     mp3dec_file_info_t info;
     memset(&info, 0, sizeof(info));
@@ -70,6 +76,10 @@ void speaker_play_mp3_file(const char *path){
 
     size_t written;
     for (int i = 0; i<info.samples; i++){
+        if(stop_audio_flag){
+            ESP_LOGI(TAG, "MP3 playback stopped.");
+            break;
+        }
         int16_t s = info.buffer[i];
         uint8_t out = (uint8_t)((((s + 32768) >> 8) * speaker_volume) / 255);
         i2s_write(I2S_NUM_0, &out, 1, &written, portMAX_DELAY);
@@ -77,6 +87,7 @@ void speaker_play_mp3_file(const char *path){
 
     free(info.buffer);
     i2s_zero_dma_buffer(I2S_NUM_0);
+    stop_audio_flag = false;
     ESP_LOGI(TAG, "MP3 playback finished");
 }
 

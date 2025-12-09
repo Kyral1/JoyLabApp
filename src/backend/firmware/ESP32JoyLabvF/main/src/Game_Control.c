@@ -2,6 +2,7 @@
 #include "LED_Control.h"
 #include "Button_Control.h"
 #include "esp_log.h"
+#include "buttonSound.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_random.h"
@@ -18,6 +19,49 @@ static bool led_reg_game_running = false;
 static bool button_led_on[NUM_BUTTONS] = {false};
 static int led_reg_points = 0;
 static int led_reg_attempts = 0;
+
+static bool sound_reg_game_running = false;
+static int sound_reg_points = 0;
+
+static void sound_game_task(void *pvParameters) {
+    ensure_speaker_ready();   // from bluetooth.c
+    button_init_all();    // from Button_Control.c
+    load_button_sounds_from_nvs();
+
+    sound_reg_game_running = true;
+    ESP_LOGI(TAG, "Starting Sound Recognition game!");
+
+    static int current_playing_button = -1;
+
+    while(sound_reg_game_running){
+        for(int i = 0; i < NUM_BUTTONS; i++){
+            if(button_is_pressed(i)){
+                //stopping different button sounds
+                if(current_playing_button != -1 && current_playing_button !=i){
+                    ESP_LOGI(TAG, "Stopping sound for button %d", current_playing_button);
+                    speaker_stop();
+                }
+
+                //starting new sound if none is playing
+                if(current_playing_button !=i){
+                    const char* sound_file = get_button_sound(i);
+                    ESP_LOGI(TAG, "Button %d pressed! Playing sound: %s", i, sound_file);
+                    play_button_sound(i);
+                    sound_reg_points ++;
+                    current_playing_button = i;
+                    //evt_notify_sound_reg_result(sound_reg_points);
+                }
+                
+                while(button_is_pressed(i)){ //wait for release
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+    speaker_stop();
+    current_playing_button = -1;
+}
 
 static void LED_regular_game_task(void *pvParameters) {
     ensure_led_ready();   // from bluetooth.c
@@ -140,17 +184,6 @@ static void whackamole_game_task(void *pvParameters) {
 
 // ================= PUBLIC FUNCTIONS =================
 void start_led_reg_game(void){
-    /*if (game_task_handle != NULL) {
-        ESP_LOGW(TAG, "Cannot start Regular game — another game is running!");
-        return;
-    }
-    stop_whackamole_game();
-    led_reg_game_running = true;
-    whack_game_running = false;
-    for (int i = 0; i < NUM_BUTTONS; i++) {
-        button_led_on[i] = false;
-    }*/
-
     if(game_task_handle == NULL){
         for (int i = 0; i < NUM_BUTTONS; i++) {
             button_led_on[i] = false;
@@ -172,6 +205,30 @@ void stop_led_reg_game(void) {
     if (game_task_handle != NULL) {
         ESP_LOGI(TAG, "Stopping LED-reg-game..");
         led_reg_game_running = false;   // signal to end loop
+    }
+    game_task_handle = NULL;
+}
+
+void start_sound_game(void){
+    if(game_task_handle == NULL){
+        sound_reg_points = 0;
+        xTaskCreate(
+            sound_game_task,
+            "sound_game_task",
+            4096,
+            NULL,
+            5,
+            &game_task_handle
+        );
+    }else{
+        ESP_LOGW(TAG, "in sound reg start: Whack-A-Mole or another game running already running.");
+    }
+}
+
+void stop_sound_game(void){
+    if (game_task_handle != NULL) {
+        ESP_LOGI(TAG, "Stopping Sound Recognition game..");
+        sound_reg_game_running = false;   // signal to end loop
     }
     game_task_handle = NULL;
 }
