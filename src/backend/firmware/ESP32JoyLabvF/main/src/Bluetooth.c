@@ -82,6 +82,7 @@ enum{
     CMD_AU_SET_VOL = 0x02,   //payload: volume 0-100
     //CMD_AU_PLAY_SOUND = 0x03,
     CMD_AU_SET_SOUND_FILE = 0x03, //payload: filename
+    CMD_AU_PREVIEW_SOUND = 0x04, //payload: button index
 };
 
 //commands - MOTOR
@@ -404,6 +405,14 @@ static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
 
 }
 
+static void cmd_audio_preview_sound(uint8_t idx){
+  if(idx == 111){idx = 0;} //preview first button if ALL
+  ensure_speaker_ready();
+  const char* sound_file = get_button_sound(idx);
+  ESP_LOGI(TAG, "Previewing sound for button %d: %s", idx, sound_file);
+  play_button_sound(idx);
+}
+
 static void cmd_motor_set_state(uint8_t motor_id, uint8_t on) {
     ensure_motor01_ready();
     ensure_motor02_ready();
@@ -535,6 +544,9 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_AU_SET_SOUND_FILE:
           if(len>=2) cmd_audio_set_sound_file(pl[0], pl[1]); //pl[0]=filename, pl[1]=button index
+          break;
+        case CMD_AU_PREVIEW_SOUND:
+          if(len>=1) cmd_audio_preview_sound(pl[0]);
           break;
       }
       break;

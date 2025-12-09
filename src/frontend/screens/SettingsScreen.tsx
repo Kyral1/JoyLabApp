@@ -136,6 +136,40 @@ useEffect(() => {
   const [volume, setVolume] = useState(0.6);
 
   //audio handlers
+  const [selectedSoundButton, setSelectedSoundButton] = useState('test.mp3');
+  const [currentSound, setCurrentSound]= useState('test.mp3');
+  const [currentSound1, setCurrentSound1] = useState('test.mp3');
+  const [currentSound2, setCurrentSound2] = useState('test.mp3');
+  const [currentSound3, setCurrentSound3] = useState('test.mp3');
+  const [currentSound4, setCurrentSound4] = useState('test.mp3');
+
+  const getButtonSound = () => {
+    switch (selectedSoundButton) {
+      case "1": return currentSound1;
+      case "2": return currentSound2;
+      case "3": return currentSound3;
+      case "4": return currentSound4;
+    default: return currentSound; // for "All"
+    }
+  };
+
+  const setButtonSound = (sound: string) => {
+    switch (selectedSoundButton) {
+      case "1": setCurrentSound1(sound); break;
+      case "2": setCurrentSound2(sound); break;
+      case "3": setCurrentSound3(sound); break;
+      case "4": setCurrentSound4(sound); break;
+    default: setCurrentSound(sound); break; // for "All"
+    }
+  };
+
+  const handleSoundChange = (sound: string) => {
+    setButtonSound(sound);
+    const idx = selectedSoundButton === "All" ? 111 : parseInt(selectedSoundButton)-1;
+    const frame = [0x02, 0x03, 0x02, sound, idx];
+  };
+
+  //audio handlers
       const audioToggle = (on: boolean) => {
       setAudio(on);
       const frame = [0x02, 0x01, 0x01, on? 1:0];
@@ -366,7 +400,77 @@ useEffect(() => {
                 minimumTrackTintColor="#4A7FFB"
                 maximumTrackTintColor="#D6DBDF"
               />
-        </View> 
+        </View>
+        {/* ========== SOUND SETTINGS CARD ========== */}
+        <View style={styles.card}>
+          <Text style={styles.sectionHeader}>Button Sound Customization</Text>
+
+          {/* Select which button to edit */}
+          <View style={styles.row}>
+            <Text style={styles.label}>Select Button:</Text>
+            <Picker
+              selectedValue={selectedSoundButton}
+              style={styles.picker}
+              onValueChange={(val) => setSelectedSoundButton(val)}
+            >
+              <Picker.Item label="All" value="All" />
+              <Picker.Item label="Button 1" value="1" />
+              <Picker.Item label="Button 2" value="2" />
+              <Picker.Item label="Button 3" value="3" />
+              <Picker.Item label="Button 4" value="4" />
+            </Picker>
+           </View>
+
+          {/* Sound Choices */}
+          <Text style={[styles.label, { marginTop: 15 }]}>Select Sound:</Text>
+
+          <View style={styles.soundRow}>
+          {[
+            "test.mp3"
+          ].map((s) => (
+          <TouchableOpacity
+            key={s}
+            style={[
+            styles.soundBtn,
+            getButtonSound() === s && styles.soundBtnActive
+          ]}
+          onPress={() => {
+            handleSoundChange(s);
+            setButtonSound(s);
+          }}
+          >
+          <Text
+          style={[
+            styles.soundBtnText,
+            getButtonSound() === s && styles.soundBtnTextActive
+          ]}
+        >
+          {s.replace(".mp3", "")}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+
+  {/* Preview / Test Sound Button */}
+  <TouchableOpacity
+    style={styles.previewBtn}
+    onPress={() => {
+      const selected = getButtonSound();
+      const idx =
+        selectedSoundButton === "All"
+          ? 111
+          : parseInt(selectedSoundButton) - 1;
+
+      const frame = [0x02, 0x04, 0x01, idx]; // CAT_AUDIO, CMD_PREVIEW
+      bleService.sendControlFrame(frame);
+
+      Alert.alert("Audio", `Playing: ${selected}`);
+    }}
+  >
+    <Text style={styles.previewBtnText}>Play Sound</Text>
+  </TouchableOpacity>
+</View>
+ 
         <View style={styles.card}>
           <Text style={styles.sectionHeader}>Sensory Pad</Text>
             {/* Mode Selector */}
@@ -625,6 +729,50 @@ bandBtnDisconnectText: {
   color: "#fff",
   fontSize: 16,
   fontWeight: "600",
+},
+
+soundRow: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  justifyContent: "space-around",
+  marginTop: 10,
+},
+
+soundBtn: {
+  backgroundColor: "#ECF0F1",
+  paddingVertical: 10,
+  paddingHorizontal: 14,
+  borderRadius: 12,
+  margin: 5,
+},
+
+soundBtnActive: {
+  backgroundColor: "#4A7FFB",
+},
+
+soundBtnText: {
+  fontSize: 14,
+  color: "#2C3E50",
+  fontWeight: "500",
+},
+
+soundBtnTextActive: {
+  color: "#FFFFFF",
+  fontWeight: "700",
+},
+
+previewBtn: {
+  marginTop: 20,
+  backgroundColor: "#C9D6FF",
+  paddingVertical: 12,
+  borderRadius: 12,
+  alignItems: "center",
+},
+
+previewBtnText: {
+  color: "#2C3E50",
+  fontWeight: "600",
+  fontSize: 16,
 },
 
 });
