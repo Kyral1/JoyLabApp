@@ -184,6 +184,35 @@ useEffect(() => {
       sendFrame(frame);
     };
 
+    type CategoryKey = keyof typeof soundBank;
+    const [selectedCategory, setSelectedCategory] = useState<CategoryKey>("animals");
+    const [selectedSound, setSelectedSound] = useState("Sound 1");
+
+  const soundBank = {
+    animals: {
+      id: 0x01,
+      label: "Animals",
+      sounds: [
+        { id: 0x00, label: "test.mp3" }
+      ],
+    },
+    instruments: {
+      id: 0x02,
+      label: "Instruments",
+      sounds: [
+        { id: 0x00, label: "test.mp3"}
+      ],
+    },
+    beats: {
+      id: 0x03,
+      label: "Beats",
+      sounds: [
+        { id: 0x00, label: "test.mp3" }
+      ],
+    },
+  } as const;
+
+
 
     //sensory pad settings 
     const [sensoryMode, setSensoryMode] = useState(0); //0=off,1=no vib,2=constant vib, 3=increasing vib
@@ -401,11 +430,12 @@ useEffect(() => {
                 maximumTrackTintColor="#D6DBDF"
               />
         </View>
-        {/* ========== SOUND SETTINGS CARD ========== */}
-        <View style={styles.card}>
-          <Text style={styles.sectionHeader}>Button Sound Customization</Text>
 
-          {/* Select which button to edit */}
+        {/* ---------------- SOUND SELECTION CARD ---------------- */}
+        <View style={styles.card}>
+          <Text style={styles.sectionHeader}>Button Sound Selection</Text>
+
+          {/* Sound Selector */}
           <View style={styles.row}>
             <Text style={styles.label}>Select Button:</Text>
             <Picker
@@ -419,58 +449,45 @@ useEffect(() => {
               <Picker.Item label="Button 3" value="3" />
               <Picker.Item label="Button 4" value="4" />
             </Picker>
-           </View>
+          </View>
 
-          {/* Sound Choices */}
-          <Text style={[styles.label, { marginTop: 15 }]}>Select Sound:</Text>
+          {/* Sound Options */}
+          <View style={styles.row}>
+            <Text style={styles.label}>Categories:</Text>
+            <Picker
+              selectedValue={selectedCategory}
+              style={styles.picker}
+              onValueChange={(val) => {
+                setSelectedCategory(val as CategoryKey); 
+                setSelectedSound(soundBank[val as CategoryKey].sounds[0].label);
+              }}
+            >
+              {Object.entries(soundBank).map(([key, cat]) => (
+                <Picker.Item key={key} label={cat.label} value={key} />
+              ))}
+            </Picker>
+            </View>
+          
+            {/* Sound Picker */}
+            <View style={styles.row}>
+              <Text style={styles.label}>Sound:</Text>
+              <Picker
+                selectedValue={selectedSound}
+                style={styles.picker}
+                onValueChange={(val) => {
+                  setSelectedSound(val);
+                  handleSoundChange(val);
+                }}
+              >
+                {soundBank[selectedCategory].sounds.map((s) => (
+                  <Picker.Item key={s.id} label={s.label} value={s.label} />
+                ))}
+              </Picker>
+            </View>
+        </View>
 
-          <View style={styles.soundRow}>
-          {[
-            "test.mp3"
-          ].map((s) => (
-          <TouchableOpacity
-            key={s}
-            style={[
-            styles.soundBtn,
-            getButtonSound() === s && styles.soundBtnActive
-          ]}
-          onPress={() => {
-            handleSoundChange(s);
-            setButtonSound(s);
-          }}
-          >
-          <Text
-          style={[
-            styles.soundBtnText,
-            getButtonSound() === s && styles.soundBtnTextActive
-          ]}
-        >
-          {s.replace(".mp3", "")}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-
-  {/* Preview / Test Sound Button */}
-  <TouchableOpacity
-    style={styles.previewBtn}
-    onPress={() => {
-      const selected = getButtonSound();
-      const idx =
-        selectedSoundButton === "All"
-          ? 111
-          : parseInt(selectedSoundButton) - 1;
-
-      const frame = [0x02, 0x04, 0x01, idx]; // CAT_AUDIO, CMD_PREVIEW
-      bleService.sendControlFrame(frame);
-
-      Alert.alert("Audio", `Playing: ${selected}`);
-    }}
-  >
-    <Text style={styles.previewBtnText}>Play Sound</Text>
-  </TouchableOpacity>
-</View>
- 
+        {/* ---------------- SENSORY PAD CARD ---------------- */}
+                        
         <View style={styles.card}>
           <Text style={styles.sectionHeader}>Sensory Pad</Text>
             {/* Mode Selector */}
