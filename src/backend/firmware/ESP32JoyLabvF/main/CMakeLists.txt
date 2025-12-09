@@ -15,10 +15,11 @@ idf_component_register(
     REQUIRES driver nvs_flash esp_timer bt esp_system spiffs 
 )
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-maybe-uninitialized)
+#spiffs_create_partition_image(spiffs ../spiffs FLASH_IN_PROJECT)
 
  #=== Embed WAV Files ===
-set(WAV_FILES
-    "${CMAKE_CURRENT_LIST_DIR}/wavFiles/AlarmSound.wav")
+#set(WAV_FILES
+#    "${CMAKE_CURRENT_LIST_DIR}/wavFiles/AlarmSound.wav")
 
 #foreach(wav ${WAV_FILES})
 #    message(STATUS "Embedding WAV: ${wav}")

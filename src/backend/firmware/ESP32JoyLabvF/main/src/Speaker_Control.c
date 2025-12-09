@@ -64,6 +64,7 @@ void speaker_mute(void) {
 void speaker_play_mp3_file(const char *path){
     mp3dec_file_info_t info;
     memset(&info, 0, sizeof(info));
+
     int res = mp3dec_load(&mp3d, path, &info, NULL, NULL);
     if(res){
         ESP_LOGE(TAG, "Failed to load MP3 file: %s", path);
@@ -71,6 +72,7 @@ void speaker_play_mp3_file(const char *path){
     }
 
     i2s_set_clk(I2S_NUM_0, info.hz, I2S_BITS_PER_SAMPLE_16BIT, 1);
+
     size_t written;
     for (int i = 0; i<info.samples; i++){
         int16_t s = info.buffer[i];

@@ -10,10 +10,28 @@
 #include "VibrationMotor.h"
 #include "Speaker_Control.h"
 #include "ForceSensor_Control.h"
+#include "esp_spiffs.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
 
+void filesystem_init(void)
+{
+    ESP_LOGI("SPIFFS", "Initializing SPIFFS");
+
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = 5,
+        .format_if_mount_failed = true
+    };
+
+    ESP_ERROR_CHECK(esp_vfs_spiffs_register(&conf));
+
+    size_t total = 0, used = 0;
+    esp_spiffs_info(NULL, &total, &used);
+    ESP_LOGI("SPIFFS", "Partition size: total: %d bytes, used: %d bytes", total, used);
+}
 
 //-----------BLE TESTING -----------
 void app_main(void)
@@ -30,14 +48,16 @@ void app_main(void)
     ESP_ERROR_CHECK(bluetooth_init());
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
+    filesystem_init();
+    speaker_init();
+    
+    //force_sensor_init();
 
-    force_sensor_init();
-
-    while(1){
+    /*while(1){
         float pressure = force_sensor_read();
         ESP_LOGI(TAG, "Force Sensor Pressure: %.2f N", pressure);
         //vTaskDelay(pdMS_TO_TICKS(1000));
-    }
+    }*/
 
     /*while (1){
         speaker_init();
