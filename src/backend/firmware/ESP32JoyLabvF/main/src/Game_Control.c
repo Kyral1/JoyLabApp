@@ -152,16 +152,16 @@ static void whackamole_game_task(void *pvParameters) {
     button_init_all();    // from Button_Control.c
     load_button_states_from_nvs(); 
     led_clear();
-    irs_init();
+    //irs_init();
+    ensure_irs_ready();
 
     whack_game_running = true;
     ESP_LOGI(TAG, "Starting Whack-A-Mole game!");
 
-    bool attempt_logged = false;
-
     while (whack_game_running) {
         // Choose a random button 0–3
         int target = esp_random() % NUM_BUTTONS;
+        bool attempt_logged = false;
 
         //get button state
         ButtonColor color = get_button_color(target);
@@ -178,20 +178,26 @@ static void whackamole_game_task(void *pvParameters) {
         led_show();
         ESP_LOGI(TAG, "after LED show");
 
+        int elapsed = 0;
+        const int TIMEOUT_MS = 3000;
+
         // Wait for correct button press
-        while (whack_game_running) {
+        while (whack_game_running && elapsed < TIMEOUT_MS) {
             bool near = irs_is_hand_near();  
             bool pressed = button_is_pressed(target);
             //ESP_LOGI(TAG, "inside while loop");
 
-            if (near && !attempt_logged) {
+            if (near && !attempt_logged && !pressed) {
+                vTaskDelay(pdMS_TO_TICKS(50));
                 led_mode_attempts ++;
                 evt_notify_led_whack_result(led_mode_points, led_mode_attempts);
                 attempt_logged = true;
                 ESP_LOGI(TAG, "Attempt detected for button %d", target);
+                
             }
             
             if(pressed){
+                vTaskDelay(pdMS_TO_TICKS(50));
                 ESP_LOGI(TAG, "in pressed loop");
                 led_mode_points ++;
                 evt_notify_led_whack_result(led_mode_points, led_mode_attempts);
@@ -200,10 +206,19 @@ static void whackamole_game_task(void *pvParameters) {
                 set_button_color(target, 0, 0, 0, 0.0f);
                 led_show();
                 vTaskDelay(pdMS_TO_TICKS(250)); // small pause
-                break; // move to next round
+                //break; // move to next round
+                goto NEXT_ROUND;
             }
             vTaskDelay(pdMS_TO_TICKS(50)); // polling interval
         }
+        vTaskDelay(pdMS_TO_TICKS(50));
+        elapsed += 50;
+        ESP_LOGI(TAG, "Timeout – no press for target %d", target);
+        NEXT_ROUND:
+        // Turn off LEDs for that button
+            set_button_color(target, 0, 0, 0, 0.0f);
+            led_show();
+            vTaskDelay(pdMS_TO_TICKS(500)); // small pause before next round
     }
 
     // Cleanup when game stops

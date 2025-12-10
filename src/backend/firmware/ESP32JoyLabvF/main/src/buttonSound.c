@@ -72,5 +72,5 @@ void play_button_sound(int button)
     snprintf(path, sizeof(path), "/spiffs/%s", button_sounds[button]);
 
     ESP_LOGI(TAG, "Playing: %s", path);
-    speaker_play_mp3_file(path);
+    //speaker_play_mp3_file(path);
 }

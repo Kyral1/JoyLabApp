@@ -18,7 +18,7 @@ void speaker_play_mp3_file(const char *path);
 // Safe streaming MP3
 void speaker_play_mp3_stream_safe(const char *path);
 
-
+void speaker_play_wav(const char *path);
 
 /*#pragma once
 #include <stdint.h>

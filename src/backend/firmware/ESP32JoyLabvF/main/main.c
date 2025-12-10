@@ -58,32 +58,43 @@ void app_main(void)
     ESP_ERROR_CHECK(bluetooth_init());
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
-    //filesystem_init();
-    speaker_init();
-    speaker_set_volume(80);
+    filesystem_init();
+    //speaker_init();
+    //speaker_set_volume(80);
     //ensure_irs_ready();
-    force_sensor_init();
+    //force_sensor_init();
     //speaker_play_mp3_file("/spiffs/test.mp3");
     
     //load_button_sounds_from_nvs();
     load_button_states_from_nvs(); 
+    speaker_init();
+    speaker_set_volume(70);
+    speaker_beep_blocking(1000, 500);
+    speaker_set_volume(100);
+    speaker_play_wav("/spiffs/HappyNoise.wav");
 
-    //ESP_LOGI("TEST", "Opening test file...");
+    ESP_LOGI("TEST", "Opening test file...");
 
-    /*FILE *f = fopen("/spiffs/test.mp3", "r");
+    FILE *f = fopen("/spiffs/HappyNoise.wav", "r");
     if (!f) {
-        ESP_LOGE("TEST", "Failed to open test.mp3");
+        ESP_LOGE("TEST", "Failed to open wav");
     } else {
-        ESP_LOGI("TEST", "SUCCESS! test.mp3 found 🎉");
+        ESP_LOGI("TEST", "SUCCESS! wav found 🎉");
+        fseek(f, 0, SEEK_END);
+        long size = ftell(f);
+        ESP_LOGI("MP3", "MP3 file size: %ld bytes", size);
         fclose(f);
-    }*/
+    }
+
+    //speaker_play_mp3_stream_safe("/spiffs/test.mp3");
 
     //xTaskCreate(mp3_test_task, "mp3_test_task", 4096, NULL, 5, NULL);
     //speaker_play_mp3_file("/spiffs/test.mp3");
     //speaker_play_mp3_stream_safe("/spiffs/test.mp3");
     //vTaskDelay(pdMS_TO_TICKS(1000));
 
-    while (1) {
+    //while (1) {
+        /*ensure_speaker_ready();
         vTaskDelay(pdMS_TO_TICKS(1000));
         speaker_set_volume(70);
         speaker_beep_blocking(1000, 500);
@@ -91,24 +102,27 @@ void app_main(void)
         vTaskDelay(pdMS_TO_TICKS(1000));
 
         speaker_set_volume(100);
-        speaker_beep_blocking(1000, 500);
-        //ensure_irs_ready();
-        /*uint16_t distance = irs_read_distance_mm();
+        speaker_beep_blocking(1000, 500);*/
+
+        /*ensure_irs_ready();
+        uint16_t distance = irs_read_distance_mm();
         ESP_LOGI(TAG, "IRS Distance: %d mm", distance);
         vTaskDelay(pdMS_TO_TICKS(2000));*/
 
         /*float pressure = force_sensor_read();
         ESP_LOGI(TAG, "Force Sensor Pressure: %.2f N", pressure);
         vTaskDelay(pdMS_TO_TICKS(100));*/
-    }
+        //vTaskDelay(pdMS_TO_TICKS(1000));
+    //}
 
-    /*while(1){
-        vibration_init();
+    while(1){
+        /*vibration_init();
         vibration_set_state_motor1(true);
         vibration_set_intensity_motor1(75);
         vibration_set_state_motor2(true);
-        vibration_set_intensity_motor2(50);
-    }*/
+        vibration_set_intensity_motor2(50);*/
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
 
     //force_sensor_init();
 
