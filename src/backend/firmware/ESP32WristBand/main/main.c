@@ -6,6 +6,10 @@
 #include "Bluetooth.h"
 #include "driver/gpio.h"
 #include "IMU_Control.h"
+#include "bmi323.h"
+#include "bmi323_defs.h"
+#include "driver/i2c.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "MAIN WB";
 //-----------BLE TESTING -----------
@@ -24,7 +28,25 @@ void app_main(void)
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
 
-    while(1){
-        vTaskDelay(pdMS_TO_TICKS(100));
+    ESP_LOGI(TAG, "Initializing IMU...");
+    imu_init();
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    float x, y, z;
+
+    while (1)
+    {
+        if (imu_motion_detected()) {
+            ESP_LOGW("MAIN", "ANY-MOTION DETECTED!");
+        }
+
+        if (imu_read_accel(&x, &y, &z)) {
+            ESP_LOGI("MAIN", "ACCEL  X=%.2f  Y=%.2f  Z=%.2f", x, y, z);
+        }
+
+        int o = imu_get_orientation();
+        ESP_LOGI("MAIN", "Orientation = %d", o);
+
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }

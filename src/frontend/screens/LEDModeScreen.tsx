@@ -16,6 +16,7 @@ export default function LEDModeScreen() {
 
     //LED Reg Mode states
     const [ledRegRunning, setLedRegRunning] = useState(false);
+    const [ledRegInteractions, setLedRegInteractions] = useState(0);
 
     // BLE Frame Function 
     const sendFrame = async (frame: number[]) => {
@@ -38,7 +39,12 @@ export default function LEDModeScreen() {
             setHits(newHits);
             setAttempts(newAttempts);
             console.log("Game Update:", bytes);
-            }
+          }
+          else if (eventCode === 0x83) {
+            const newInteractions = bytes[1];
+            setLedRegInteractions(newInteractions);
+            console.log("LED Reg Update:", bytes);
+          }
         });
         return () => bleService.disableNotifications();
     }, []);
@@ -98,6 +104,7 @@ export default function LEDModeScreen() {
     const stopLedRegGame = async () => {
         await sendFrame([0x04, 0x05, 0x00]); // example CMD: stop LED regular mode
         setLedRegRunning(false);
+        //log interactions to DB
     }
 
 
@@ -150,6 +157,14 @@ export default function LEDModeScreen() {
         <Text style={styles.description}>
           Description: Push buttons to turn them on and off.
         </Text>
+        
+        {/* Scoreboard */}
+        <View style={styles.scoreboard}>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Interactions</Text>
+            <Text style={styles.scoreValue}>{ledRegInteractions}</Text>
+          </View>
+        </View>
 
         {/* Start / Stop buttons */}
         <View style={[styles.row, { marginTop: 20 }]}>

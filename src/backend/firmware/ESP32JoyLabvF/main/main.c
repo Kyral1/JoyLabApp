@@ -11,7 +11,9 @@
 #include "Speaker_Control.h"
 #include "buttonSound.h"
 #include "ForceSensor_Control.h"
+#include "vibrationMotor.h"
 #include "esp_spiffs.h"
+#include "IRS_Control.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
@@ -22,7 +24,7 @@ void filesystem_init(void)
 
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
-        .partition_label = NULL,
+        .partition_label = "spiffs",
         .max_files = 5,
         .format_if_mount_failed = true
     };
@@ -30,13 +32,20 @@ void filesystem_init(void)
     ESP_ERROR_CHECK(esp_vfs_spiffs_register(&conf));
 
     size_t total = 0, used = 0;
-    esp_spiffs_info(NULL, &total, &used);
+    esp_spiffs_info("spiffs", &total, &used);
     ESP_LOGI("SPIFFS", "Partition size: total: %d bytes, used: %d bytes", total, used);
+}
+void mp3_test_task(void *arg)
+{
+    vTaskDelay(pdMS_TO_TICKS(2000));   // Let system settle
+    speaker_play_mp3_file("/spiffs/test.mp3");
+    vTaskDelete(NULL);
 }
 
 //-----------BLE TESTING -----------
 void app_main(void)
 {
+    //irs_init();
     // Initialize NVS (required for BLE stack)
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -49,11 +58,57 @@ void app_main(void)
     ESP_ERROR_CHECK(bluetooth_init());
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
-    filesystem_init();
+    //filesystem_init();
     speaker_init();
+    speaker_set_volume(80);
+    //ensure_irs_ready();
+    force_sensor_init();
+    //speaker_play_mp3_file("/spiffs/test.mp3");
     
-    load_button_sounds_from_nvs();
+    //load_button_sounds_from_nvs();
     load_button_states_from_nvs(); 
+
+    //ESP_LOGI("TEST", "Opening test file...");
+
+    /*FILE *f = fopen("/spiffs/test.mp3", "r");
+    if (!f) {
+        ESP_LOGE("TEST", "Failed to open test.mp3");
+    } else {
+        ESP_LOGI("TEST", "SUCCESS! test.mp3 found 🎉");
+        fclose(f);
+    }*/
+
+    //xTaskCreate(mp3_test_task, "mp3_test_task", 4096, NULL, 5, NULL);
+    //speaker_play_mp3_file("/spiffs/test.mp3");
+    //speaker_play_mp3_stream_safe("/spiffs/test.mp3");
+    //vTaskDelay(pdMS_TO_TICKS(1000));
+
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        speaker_set_volume(70);
+        speaker_beep_blocking(1000, 500);
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+
+        speaker_set_volume(100);
+        speaker_beep_blocking(1000, 500);
+        //ensure_irs_ready();
+        /*uint16_t distance = irs_read_distance_mm();
+        ESP_LOGI(TAG, "IRS Distance: %d mm", distance);
+        vTaskDelay(pdMS_TO_TICKS(2000));*/
+
+        /*float pressure = force_sensor_read();
+        ESP_LOGI(TAG, "Force Sensor Pressure: %.2f N", pressure);
+        vTaskDelay(pdMS_TO_TICKS(100));*/
+    }
+
+    /*while(1){
+        vibration_init();
+        vibration_set_state_motor1(true);
+        vibration_set_intensity_motor1(75);
+        vibration_set_state_motor2(true);
+        vibration_set_intensity_motor2(50);
+    }*/
 
     //force_sensor_init();
 
@@ -88,8 +143,8 @@ void app_main(void)
     //int color_state = 0;
     //int num_leds = 72;
 
-    while(1){
-        /*int button_state = gpio_get_level(BUTTON_GPIO);
+    /*while(1){
+        int button_state = gpio_get_level(BUTTON_GPIO);
         printf("Button state: %d\n", button_state);
 
         if (button_state == 1)
@@ -125,10 +180,10 @@ void app_main(void)
             // Move to next color
             color_state = (color_state + 1) % 3;
 
-        }*/
+        }
 
         vTaskDelay(pdMS_TO_TICKS(100));
-    }
+    }*/
 }
 
 //-----------BUTTON + LED TESTING -----------

@@ -51,6 +51,14 @@ float force_sensor_read(){
     uint16_t raw = ((data[0] & 0x3F) << 8) | data[1];
     float pressure = ((float)raw / 16383.0f) * 25.0f;
 
-    return raw;
+    float minF = 5.48f;
+    float maxF = 8.50f; 
+
+    if (pressure < minF) pressure = minF;
+    if (pressure > maxF) pressure = maxF;
+    float normalized = (pressure - minF) / (maxF - minF);
+    float scaled = normalized * 10.0f;
+
+    return scaled;
 }
 

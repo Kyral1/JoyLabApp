@@ -108,6 +108,7 @@ enum{
 enum{
     EVT_GAME_RESULT = 0x81, //payload: 
     EVT_LED_WHACK_RESULT   = 0x82,
+    EVT_LED_REG_RESULT = 0x83,
 };
 
 //settings snapshot
@@ -291,6 +292,25 @@ void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
     ESP_LOGI(TAG, "Sent LED Whack result: points=%d, attempts=%d", points, attempts);
 }
 
+void evt_notify_led_reg_results(uint8_t interactions){
+    if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    uint8_t payload[2]; //event code + interactions
+    payload[0] = EVT_LED_REG_RESULT; // custom event code for LED Regular game
+    payload[1] = interactions;         // lower byte
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent LED Regular game result: interactions=%d", interactions);
+}
+
 //BLE Notify helpers
 //IRS Distance notify:
 void ble_notify_distance(uint16_t distance_mm) {
@@ -376,10 +396,10 @@ static void cmd_audio_set_state(uint8_t on){
   if (state){
     //speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
     speaker_set_volume(last_volume);
-    speaker_beep_blocking(1000, 500);
+    //speaker_beep_blocking(1000, 500);
   }else{ //muting to turn off
     last_volume = speaker_get_volume();
-    speaker_mute();
+    //speaker_mute();
   }
   ESP_LOGI(TAG, "BLE Speaker toggle: %s", state ? "ON" : "OFF");
 }
@@ -390,7 +410,7 @@ static void cmd_audio_set_volume(uint8_t vol) {
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
-static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
+/*static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
   if(idx == 111){
     for(int i = 0; i<NUM_BUTTONS; i++){
       ESP_LOGI(TAG, "(ALL) Setting sound for button %d to %s", i, filename);
@@ -403,7 +423,7 @@ static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
     save_button_sound_persistent(idx, filename);
   }
 
-}
+}*/
 
 static void cmd_audio_preview_sound(uint8_t idx){
   if(idx == 111){idx = 0;} //preview first button if ALL
@@ -542,9 +562,9 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_AU_SET_VOL:
           if (len >= 1) cmd_audio_set_volume(pl[0]);
           break;
-        case CMD_AU_SET_SOUND_FILE:
+        /*case CMD_AU_SET_SOUND_FILE:
           if(len>=2) cmd_audio_set_sound_file(pl[0], pl[1]); //pl[0]=filename, pl[1]=button index
-          break;
+          break;*/
         case CMD_AU_PREVIEW_SOUND:
           if(len>=1) cmd_audio_preview_sound(pl[0]);
           break;

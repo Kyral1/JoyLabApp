@@ -9,6 +9,7 @@
 #include "esp_random.h"
 #include "Bluetooth.h"
 #include "IRS_Control.h"
+#include "bluetooth.h"
 
 static TaskHandle_t game_task_handle = NULL;
 static bool whack_game_running = false;
@@ -18,8 +19,7 @@ static int led_mode_attempts = 0;
 
 static bool led_reg_game_running = false;
 static bool button_led_on[NUM_BUTTONS] = {false};
-static int led_reg_points = 0;
-static int led_reg_attempts = 0;
+static int led_reg_interactions = 0;
 
 static bool sound_reg_game_running = false;
 static int sound_reg_points = 0;
@@ -69,15 +69,47 @@ static void LED_regular_game_task(void *pvParameters) {
     button_init_all();    // from Button_Control.c
     load_button_states_from_nvs(); 
     led_clear();
-    irs_init();
+    //irs_init();
+    ensure_irs_ready();
 
     led_reg_game_running = true;
     ESP_LOGI(TAG, "Starting Regular LED game!");
     bool attempt_logged = false;
 
     while(led_reg_game_running){
+
+        //hand near sensor behavior 
+        if(irs_is_hand_near()){
+            led_reg_interactions++;
+            evt_notify_led_reg_results(led_reg_interactions);
+            int i = 1;
+            if(button_led_on[i]){
+                button_led_on[i] = !button_led_on[i];
+                ButtonColor color = get_button_color(i);
+                for(int j = 0; j<NUM_BUTTONS;j++){
+                    if(j==i){
+                        set_button_color(i, 0, 0, 0, 0.0f);
+                    }else{
+                        set_button_color(j, 0, 0, 0, 0.0f);
+                    }
+                }
+                set_button_color(i, color.r, color.g, color.b, color.brightness);
+                ESP_LOGI(TAG, "Button %d → LED ON", i);
+                ESP_LOGI(TAG, "Target %d -> r=%d g=%d b=%d br=%.2f",i, color.r, color.g, color.b, color.brightness);
+            }else{
+                button_led_on[i] = !button_led_on[i];
+                set_button_color(i, 0, 0, 0, 0.0f);
+                ESP_LOGI(TAG, "Button %d → LED OFF", i);
+            }
+            led_show();
+            vTaskDelay(pdMS_TO_TICKS(500)); //debounce delay
+        }
+
+        //button press behavior
         for(int i = 0; i < NUM_BUTTONS; i++){
             if(button_is_pressed(i)){
+                led_reg_interactions ++;
+                evt_notify_led_reg_results(led_reg_interactions);
                 if(!button_led_on[i]){
                     button_led_on[i] = !button_led_on[i];
                     ButtonColor color = get_button_color(i);
@@ -103,6 +135,7 @@ static void LED_regular_game_task(void *pvParameters) {
 
                 led_show();
             }
+            
         }
         vTaskDelay(pdMS_TO_TICKS(30));
     }
@@ -186,6 +219,8 @@ static void whackamole_game_task(void *pvParameters) {
 // ================= PUBLIC FUNCTIONS =================
 void start_led_reg_game(void){
     if(game_task_handle == NULL){
+        led_reg_interactions = 0;
+        evt_notify_led_reg_results(led_reg_interactions);
         for (int i = 0; i < NUM_BUTTONS; i++) {
             button_led_on[i] = false;
         }

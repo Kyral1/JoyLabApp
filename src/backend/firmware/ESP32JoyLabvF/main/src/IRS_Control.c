@@ -15,9 +15,11 @@ static VL53L0X_Dev_t sensor;
 
 void irs_init(void) {
     gpio_set_direction(14, GPIO_MODE_OUTPUT);
-    gpio_set_level(14, 1);
+    gpio_set_level(14, 0);
     vTaskDelay(pdMS_TO_TICKS(10));
-
+    gpio_set_level(14, 1);
+    vTaskDelay(pdMS_TO_TICKS(50));
+    ESP_LOGW(TAG, "IRS INIT CALLED");
     ESP_LOGI(TAG, "Initializing VL53L0X (ESP32 driver)...");
     sensor.I2cDevAddr = 0x29;
     VL53L0X_Error err = VL53L0X_Device_init(&sensor);
