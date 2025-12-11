@@ -223,7 +223,7 @@ void ensure_irs_ready(void){
   if(!s.irs_ready){irs_init(); s.irs_ready = true;}
 }
 
-static void ensure_force_ready(void){
+void ensure_force_ready(void){
   if(!s.force_ready){force_sensor_init(); s.force_ready = true;}
 }
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
@@ -425,8 +425,20 @@ static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
     save_button_sound(idx, filename);
     save_button_sound_persistent(idx, filename);
   }
-
 }
+
+static void cmd_audio_set_sound_file_from_frame(uint8_t *data, uint8_t len)
+{
+    if (len < 2) return; // must have filename + idx
+    uint8_t idx = data[len - 1];  // last byte of payload
+    // Null-terminate filename
+    data[len - 1] = '\0';
+    const char *filename = (char *)data;
+    ESP_LOGI(TAG, "Received sound filename='%s' idx=%d", filename, idx);
+    cmd_audio_set_sound_file(filename, idx);
+}
+
+
 
 static void cmd_audio_preview_sound(uint8_t idx){
   if(idx == 111){idx = 0;} //preview first button if ALL
@@ -476,14 +488,14 @@ static void cmd_motor_set_intensity(uint8_t motor_id, uint8_t intensity) {
     }
 }*/
 
-static void force_continuous_task(void *pvParameters){
+/*static void force_continuous_task(void *pvParameters){
   ensure_force_ready();
   while(1){
     float pressure = force_sensor_read();
     ble_notify_force(pressure);
     vTaskDelay(pdMS_TO_TICKS(500));
   }
-}
+}*/
 
 /*static void start_irs_continuous_task(void) {
     if (irs_task_handle == NULL) {
@@ -501,7 +513,7 @@ static void force_continuous_task(void *pvParameters){
     }
 }*/
 
-static void start_force_continuous_task(void){
+/*static void start_force_continuous_task(void){
   if(force_task_handle == NULL){
     xTaskCreate(force_continuous_task, 
       "force_task", 
@@ -512,7 +524,7 @@ static void start_force_continuous_task(void){
   }else{
     ESP_LOGW(TAG, "Force task already running");
   }
-}
+}*/
 
 // Stop continuous ranging + BLE updates
 /*static void stop_irs_continuous_task(void) {
@@ -525,7 +537,7 @@ static void start_force_continuous_task(void){
     }
 }*/
 
-static void stop_force_continuous_task(void){
+/*static void stop_force_continuous_task(void){
   if(force_task_handle != NULL){
     ESP_LOGI(TAG, "Stopping Force Sensor updates...");
     vTaskDelete(force_task_handle);
@@ -533,7 +545,7 @@ static void stop_force_continuous_task(void){
   }else{
     ESP_LOGW(TAG, "Force task not running");
   }
-}
+}*/
 
 static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
   if (n < 3) return;
@@ -565,9 +577,9 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_AU_SET_VOL:
           if (len >= 1) cmd_audio_set_volume(pl[0]);
           break;
-        /*case CMD_AU_SET_SOUND_FILE:
-          if(len>=2) cmd_audio_set_sound_file(pl[0], pl[1]); //pl[0]=filename, pl[1]=button index
-          break;*/
+        case CMD_AU_SET_SOUND_FILE:
+          if(len>=2) cmd_audio_set_sound_file_from_frame(pl, len); //pl[0]=filename, pl[1]=button index
+          break;
         case CMD_AU_PREVIEW_SOUND:
           if(len>=1) cmd_audio_preview_sound(pl[0]);
           break;
@@ -600,7 +612,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       }
       break;
     
-    case CAT_FORCE:
+    /*case CAT_FORCE:
       switch (cmd) {
         case CMD_FORCE_START_CONT:
           start_force_continuous_task();
@@ -608,7 +620,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_FORCE_END_CONT:
           stop_force_continuous_task();
           break;
-      }break;
+      }break;*/
     
     case CAT_GAME:
       switch (cmd) {

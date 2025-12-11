@@ -53,5 +53,5 @@ void dotstar_show(uint8_t *rgb, int count) {
     t.tx_buffer = end;
     spi_device_transmit(spi, &t);
 
-    ESP_LOGI(TAG, "DotStar data sent");
+    //ESP_LOGI(TAG, "DotStar data sent");
 }

@@ -10,6 +10,8 @@ import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import { bleWristbandService } from '../services/BLEWristBandService';
 
  export default function SettingsScreen() {
+  const brightnessPending = React.useRef(false);
+  const sendPending = React.useRef(false);
   //BLE send frame function: 
   const sendFrame = async (frame: number[]) => {
     try{
@@ -113,23 +115,37 @@ useEffect(() => {
       sendFrame(frame);
   }
 
+  //const sendPending = React.useRef(false);
   //Change LED Color
   const handleChangeColor = (color: { r: number; g: number; b: number })=>{
     setButtonColor(color);
-    const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
-    const br = Math.round(brightness * 100);
-    const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
-    sendFrame(frame);
+    if (sendPending.current) return;
+    sendPending.current = true;
+
+    setTimeout(() => {
+      const idx = selectedButton === "All" ? 111 : parseInt(selectedButton)-1;
+      const br = Math.round(brightness * 100);
+      const frame = [0x01,0x01, 0x05, idx, color.r, color.g, color.b, br];
+      sendFrame(frame);
+      sendPending.current = false;
+    }, 50);
   }
 
+  //const brightnessPending = React.useRef(false);
   //Change LED Brightness
   const handleBrightnessChange = (val: number) => {
     setBrightness(val); //updates the state to remember the slider position
-    const { r, g, b } = getButtonColor();
-    const idx = selectedButton === "All" ? 111 : parseInt(selectedButton) - 1;
-    const br = Math.round(val * 100);
-    const frame = [0x01, 0x01, 0x05, idx, r, g, b, br];
-    sendFrame(frame);
+    if (brightnessPending.current) return;
+    brightnessPending.current = true;
+
+    setTimeout(() => {
+      const { r, g, b } = getButtonColor();
+      const idx = selectedButton === "All" ? 111 : parseInt(selectedButton) - 1;
+      const br = Math.round(val * 100);
+      const frame = [0x01, 0x01, 0x05, idx, r, g, b, br];
+      sendFrame(frame);
+      brightnessPending.current = false;
+    }, 50);
   }
 
   // --- Slider states
@@ -165,8 +181,12 @@ useEffect(() => {
 
   const handleSoundChange = (sound: string) => {
     setButtonSound(sound);
+    //conversion
+    const filenameBytes: number[] = [...Buffer.from(sound, "utf8")];
     const idx = selectedSoundButton === "All" ? 111 : parseInt(selectedSoundButton)-1;
-    const frame = [0x02, 0x03, 0x02, sound, idx];
+    const length = filenameBytes.length + 1;
+    const frame = [0x02, 0x03, length, ...filenameBytes, idx];
+    sendFrame(frame);
   };
 
   //audio handlers
@@ -404,7 +424,7 @@ useEffect(() => {
             <Slider
                 style={styles.slider}
                 value={brightness}
-                onValueChange={handleBrightnessChange}
+                onSlidingComplete={handleBrightnessChange}
                 minimumValue={0}
                 maximumValue={1}
                 minimumTrackTintColor="#4A7FFB"

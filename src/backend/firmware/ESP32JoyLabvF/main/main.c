@@ -14,6 +14,7 @@
 #include "vibrationMotor.h"
 #include "esp_spiffs.h"
 #include "IRS_Control.h"
+#include "Sensory_Pad.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
@@ -62,12 +63,28 @@ void app_main(void)
     
     //load_button_sounds_from_nvs();
     load_button_states_from_nvs(); 
+    //vTaskDelay(pdMS_TO_TICKS(1000));
+    //vibration_init();
+    //vibration_set_state_motor1(true);
+    //vibration_set_intensity_motor1(75);
+    //vTaskDelay(pdMS_TO_TICKS(3000));
+    //vibration_set_state_motor2(false);
+
+    /*ensure_force_ready();
+    vibration_init();
+    vibration_set_state_motor1(true);
+    vibration_set_intensity_motor1(75);
     vTaskDelay(pdMS_TO_TICKS(1000));
+    vibration_set_state_motor1(false);*/
+    //sensory_constant_vibration_start(60);
+    //sensory_increasing_vibration_start(20, 100);
     /*speaker_init();
     speaker_set_volume(70);
     speaker_beep_blocking(1000, 500);
     speaker_set_volume(100);
     speaker_play_wav("/spiffs/HappyNoise.wav");
+
+    
 
     ESP_LOGI("TEST", "Opening test file...");
 
@@ -112,11 +129,12 @@ void app_main(void)
     //}
 
     while(1){
-        /*vibration_init();
-        vibration_set_state_motor1(true);
-        vibration_set_intensity_motor1(75);
-        vibration_set_state_motor2(true);
-        vibration_set_intensity_motor2(50);*/
+        //vibration_init();
+        //vibration_set_state_motor1(true);
+        //vibration_set_intensity_motor1(75);
+        //vTaskDelay(pdMS_TO_TICKS(2000));
+        //vibration_set_state_motor2(false);
+        //vibration_set_intensity_motor2(50);
         /*ensure_irs_ready();
         uint16_t distance = irs_read_distance_mm();
         ESP_LOGI(TAG, "IRS Distance: %d mm", distance);*/
