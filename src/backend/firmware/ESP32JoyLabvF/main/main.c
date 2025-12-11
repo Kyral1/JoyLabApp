@@ -35,12 +35,6 @@ void filesystem_init(void)
     esp_spiffs_info("spiffs", &total, &used);
     ESP_LOGI("SPIFFS", "Partition size: total: %d bytes, used: %d bytes", total, used);
 }
-void mp3_test_task(void *arg)
-{
-    vTaskDelay(pdMS_TO_TICKS(2000));   // Let system settle
-    speaker_play_mp3_file("/spiffs/test.mp3");
-    vTaskDelete(NULL);
-}
 
 //-----------BLE TESTING -----------
 void app_main(void)
@@ -59,6 +53,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
     vTaskDelay(pdMS_TO_TICKS(1000)); 
     filesystem_init();
+    vTaskDelay(pdMS_TO_TICKS(1000));
     //speaker_init();
     //speaker_set_volume(80);
     //ensure_irs_ready();
@@ -67,7 +62,8 @@ void app_main(void)
     
     //load_button_sounds_from_nvs();
     load_button_states_from_nvs(); 
-    speaker_init();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    /*speaker_init();
     speaker_set_volume(70);
     speaker_beep_blocking(1000, 500);
     speaker_set_volume(100);
@@ -84,7 +80,7 @@ void app_main(void)
         long size = ftell(f);
         ESP_LOGI("MP3", "MP3 file size: %ld bytes", size);
         fclose(f);
-    }
+    }*/
 
     //speaker_play_mp3_stream_safe("/spiffs/test.mp3");
 
@@ -121,7 +117,25 @@ void app_main(void)
         vibration_set_intensity_motor1(75);
         vibration_set_state_motor2(true);
         vibration_set_intensity_motor2(50);*/
-        vTaskDelay(pdMS_TO_TICKS(100));
+        /*ensure_irs_ready();
+        uint16_t distance = irs_read_distance_mm();
+        ESP_LOGI(TAG, "IRS Distance: %d mm", distance);*/
+        /*bool pressed1 = button_is_pressed(1);
+        ESP_LOGI(TAG, "Button 1 pressed state: %d", pressed1);
+        bool pressed2 = button_is_pressed(2);
+        ESP_LOGI(TAG, "Button 2 pressed state: %d", pressed2);
+        vTaskDelay(pdMS_TO_TICKS(250));*/
+        //ensure_speaker_ready();
+        //speaker_set_volume(100);
+        //speaker_play_wav("/spiffs/HappyNoise.wav");
+        //speaker_beep_blocking(1000, 500);
+        //vTaskDelay(pdMS_TO_TICKS(1000));
+        //speaker_set_volume(10);
+        //speaker_beep_blocking(1000, 500);
+        //speaker_play_wav("/spiffs/HappyNoise.wav");
+        //speaker_set_volume(100);
+        //speaker_beep_blocking(1000, 500);
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
 
     //force_sensor_init();

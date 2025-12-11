@@ -25,6 +25,7 @@
 //extern vars
 extern int led_mode_points;
 extern int led_mode_attempts;
+static uint8_t last_volume = 70;
 
 // ---- UUIDs (match your app) -------------------------------------------------
 #define SRV_UUID       0x1234
@@ -392,10 +393,11 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
 static void cmd_audio_set_state(uint8_t on){
   ensure_speaker_ready();  // ensure pin is ready
   bool state = (on > 0);
-  static uint8_t last_volume = 50;
+  //static uint8_t last_volume = 70;
   if (state){
     //speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
-    speaker_set_volume(last_volume);
+    //speaker_set_volume(last_volume);
+    speaker_play_wav("/spiffs/HappyNoise.wav");
     //speaker_beep_blocking(1000, 500);
   }else{ //muting to turn off
     last_volume = speaker_get_volume();
@@ -407,23 +409,24 @@ static void cmd_audio_set_state(uint8_t on){
 static void cmd_audio_set_volume(uint8_t vol) {
     ensure_speaker_ready(); 
     speaker_set_volume(vol);
+    last_volume = vol;
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
-/*static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
+static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
   if(idx == 111){
     for(int i = 0; i<NUM_BUTTONS; i++){
       ESP_LOGI(TAG, "(ALL) Setting sound for button %d to %s", i, filename);
-      set_button_sound(i, filename);
+      save_button_sound(i, filename);
       save_button_sound_persistent(i, filename);
     }
   }else if(idx<4){
     ESP_LOGI(TAG, "Setting sound for button %d to %s", idx, filename);
-    set_button_sound(idx, filename);
+    save_button_sound(idx, filename);
     save_button_sound_persistent(idx, filename);
   }
 
-}*/
+}
 
 static void cmd_audio_preview_sound(uint8_t idx){
   if(idx == 111){idx = 0;} //preview first button if ALL

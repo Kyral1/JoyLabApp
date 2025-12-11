@@ -193,21 +193,21 @@ useEffect(() => {
       id: 0x01,
       label: "Animals",
       sounds: [
-        { id: 0x00, label: "test.mp3" }
+        { id: 0x00, label: "HappyNoise.wav" }
       ],
     },
     instruments: {
       id: 0x02,
       label: "Instruments",
       sounds: [
-        { id: 0x00, label: "test.mp3"}
+        { id: 0x00, label: "HappyNoise.wav"}
       ],
     },
     beats: {
       id: 0x03,
       label: "Beats",
       sounds: [
-        { id: 0x00, label: "test.mp3" }
+        { id: 0x00, label: "HappyNoise.wav" }
       ],
     },
   } as const;

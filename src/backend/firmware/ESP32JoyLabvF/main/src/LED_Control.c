@@ -30,10 +30,10 @@ static ButtonColor button_colors[NUM_BUTTONS]={
 };
 
 static const int buttonLEDs[4][9] = {
-    {0, 1, 2, 3, 4, 5, 6, 7, -1},       // Button 0
-    {8, 9, 10, 11, 12, 13, 14, 15, -1}, // Button 1
-    {16, 17, 18, 19, 20, 21, 22, 23, -1}, // Button 2
-    {24, 25, 26, 27, 28, 29, 30, 31, -1}  // Button 3
+    {26, 27, 28, 29, 30, 31, 32, 33, -1},       // Button 0
+    {39, 40, 41, 42, 43, 45, 46, 47, -1}, // Button 1
+    {52, 53, 54, 55, 56, 57, 58, 59, -1}, // Button 2
+    {62, 63, 65, 67, 68, 69, 70, 71, -1}  // Button 3
 };
 
 void save_button_state(int button, uint8_t r, uint8_t g, uint8_t b, float brightness) {
