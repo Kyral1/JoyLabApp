@@ -28,12 +28,16 @@ static bool button_sound_on[NUM_BUTTONS] = {false};
 static int sound_reg_hits = 0;
 static int sound_reg_attempts = 0;
 
+static bool dual_mode_game_running = false;
+static int dual_mode_hits = 0;
+static int dual_mode_attempts = 0;
+
 static void sound_game_task(void *pvParameters)
 {
     ensure_speaker_ready();
     button_init_all();
     load_button_sounds_from_nvs();
-    //ensure_irs_ready();
+    ensure_irs_ready();
 
     sound_reg_game_running = true;
     ESP_LOGI(TAG, "Starting Sound Recognition game!");
@@ -50,7 +54,7 @@ static void sound_game_task(void *pvParameters)
         /*------------------------------------------------------*
          *                SENSOR BEHAVIOR (button 1)
          *------------------------------------------------------*/
-        /*if (irs_is_hand_near()) {
+        if (irs_is_hand_near()) {
 
             int i = 1;      // sensor controls button 1
             sound_reg_attempts++;
@@ -82,7 +86,7 @@ static void sound_game_task(void *pvParameters)
             }
 
             vTaskDelay(pdMS_TO_TICKS(500));  // debounce
-        }*/
+        }
 
 
         /*------------------------------------------------------*
@@ -453,7 +457,189 @@ static void whackamole_game_task(void *pvParameters) {
     vTaskDelete(NULL);
 }
 
+static void dual_mode_game_task(void *pvParameters)
+{
+    ensure_led_ready();
+    ensure_speaker_ready();
+    button_init_all();
+    load_button_states_from_nvs();
+    load_button_sounds_from_nvs();
+    ensure_irs_ready();
+
+    dual_mode_game_running = true;
+
+    ESP_LOGI(TAG, "Starting Dual Mode game!");
+
+    int current_active_button = -1;   // LED + sound both controlled by this
+
+    // Clear LED + sound states
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        button_led_on[i] = false;
+        button_sound_on[i] = false;
+        set_button_color(i, 0, 0, 0, 0.0f);
+    }
+    led_show();
+
+    while (dual_mode_game_running)
+    {
+        /*------------------------------------------------------*
+         *                SENSOR BEHAVIOR  (button 1)
+         *------------------------------------------------------*/
+        if (irs_is_hand_near())
+        {
+            int i = 1;   // sensor controls button 1
+
+            dual_mode_attempts++;
+            evt_notify_dual_mode_result(dual_mode_hits, dual_mode_attempts);
+
+            if (button_led_on[i]) {
+                // TURN OFF BOTH LED + SOUND
+                ESP_LOGI(TAG, "Sensor → turning OFF button %d", i);
+
+                button_led_on[i] = false;
+                button_sound_on[i] = false;
+                speaker_stop();
+                set_button_color(i, 0, 0, 0, 0.0f);
+                current_active_button = -1;
+
+            } else {
+                // TURN ON BOTH
+                ESP_LOGI(TAG, "Sensor → turning ON button %d", i);
+
+                // Turn off previous one if different
+                if (current_active_button != -1 && current_active_button != i) {
+                    button_led_on[current_active_button] = false;
+                    button_sound_on[current_active_button] = false;
+                    speaker_stop();
+                    set_button_color(current_active_button, 0, 0, 0, 0.0f);
+                }
+
+                // LED ON
+                ButtonColor color = get_button_color(i);
+                set_button_color(i, color.r, color.g, color.b, color.brightness);
+                button_led_on[i] = true;
+
+                // SOUND ON
+                const char *snd = get_button_sound(i);
+                speaker_play_wav(snd);
+                button_sound_on[i] = true;
+
+                current_active_button = i;
+                dual_mode_hits++;
+            }
+
+            led_show();
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+
+
+        /*------------------------------------------------------*
+         *                BUTTON PRESS BEHAVIOR
+         *------------------------------------------------------*/
+        for (int i = 0; i < NUM_BUTTONS; i++)
+        {
+            if (button_is_pressed(i))
+            {
+                dual_mode_attempts++;
+                evt_notify_dual_mode_result(dual_mode_hits, dual_mode_attempts);
+
+                if (!button_led_on[i]) {
+                    //-------------------------------
+                    // TURN ON THIS BUTTON (LED + sound)
+                    //-------------------------------
+                    ESP_LOGI(TAG, "Button %d → ON (LED + Sound)", i);
+
+                    // Turn off previously active button
+                    if (current_active_button != -1 && current_active_button != i) {
+                        button_led_on[current_active_button] = false;
+                        button_sound_on[current_active_button] = false;
+                        speaker_stop();
+                        set_button_color(current_active_button, 0, 0, 0, 0.0f);
+                    }
+
+                    // LED ON
+                    ButtonColor color = get_button_color(i);
+                    set_button_color(i, color.r, color.g, color.b, color.brightness);
+                    button_led_on[i] = true;
+
+                    // SOUND ON
+                    const char *snd = get_button_sound(i);
+                    speaker_play_wav(snd);
+                    button_sound_on[i] = true;
+
+                    current_active_button = i;
+                    dual_mode_hits++;
+
+                } else {
+                    //-------------------------------
+                    // TURN OFF THIS BUTTON
+                    //-------------------------------
+                    ESP_LOGI(TAG, "Button %d → OFF (LED + Sound)", i);
+
+                    button_led_on[i] = false;
+                    button_sound_on[i] = false;
+                    speaker_stop();
+                    set_button_color(i, 0, 0, 0, 0.0f);
+
+                    current_active_button = -1;
+                }
+
+                led_show();
+
+                // debounce until release
+                while (button_is_pressed(i)) {
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+
+    /*------------------------------------------------------*
+     *                    CLEANUP
+     *------------------------------------------------------*/
+    speaker_stop();
+    led_clear();
+    led_show();
+
+    game_task_handle = NULL;
+    vTaskDelete(NULL);
+}
+
+
 // ================= PUBLIC FUNCTIONS =================
+void start_dual_mode_game(void)
+{
+    if (game_task_handle == NULL)
+    {
+        dual_mode_hits = 0;
+        dual_mode_attempts = 0;
+        evt_notify_dual_mode_result(dual_mode_hits, dual_mode_attempts);
+
+        xTaskCreate(
+            dual_mode_game_task,
+            "dual_mode_game_task",
+            4096,
+            NULL,
+            5,
+            &game_task_handle
+        );
+    }else{
+        ESP_LOGW(TAG, "in dual mode start: Whack-A-Mole or another game running already running.");
+    }
+}
+
+void stop_dual_mode_game(void)
+{
+    if (game_task_handle != NULL)
+    {
+        ESP_LOGI(TAG, "Stopping Dual Mode..");
+        dual_mode_game_running = false;
+    }
+    game_task_handle = NULL;
+}
+
 void start_led_reg_game(void){
     if(game_task_handle == NULL){
         led_reg_interactions = 0;

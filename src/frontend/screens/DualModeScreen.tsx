@@ -19,13 +19,13 @@ export default function DualModeScreen() {
   };
 
   const startDualGame = async () => {
-    await sendFrame([0x04, 0x06, 0x00]); // example CMD: start whack
+    await sendFrame([0x04, 0x08, 0x00]); // example CMD: start whack
     //await sendFrame([0x04, 0x05, 0x00]); //stop reg
       setGameRunning(true);
     };
 
     const stopDualGame = async () => {
-        await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop
+        await sendFrame([0x04, 0x09, 0x00]); // example CMD: stop
         setGameRunning(false);
     };
 

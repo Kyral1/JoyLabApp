@@ -41,6 +41,7 @@ void evt_notify_led_whack_result(uint8_t points, uint8_t attempts);
 void evt_notify_led_reg_results(uint8_t hits, uint8_t attempts);
 void ensure_force_ready(void);
 void evt_notify_sound_reg_result(uint8_t hits, uint8_t attempts);
+void evt_notify_dual_mode_result(uint8_t hits, uint8_t attempts);
 
 #ifdef __cplusplus
 }
