@@ -111,6 +111,7 @@ enum{
     EVT_LED_WHACK_RESULT   = 0x82,
     EVT_LED_REG_RESULT = 0x83,
     EVT_SOUND_RESULT = 0x84,
+    EVT_SOUND_RESULT = 0x85,
 };
 
 //settings snapshot
