@@ -210,9 +210,10 @@ static void whackamole_game_task(void *pvParameters) {
                 goto NEXT_ROUND;
             }
             vTaskDelay(pdMS_TO_TICKS(50)); // polling interval
+        
+            vTaskDelay(pdMS_TO_TICKS(50));
+            elapsed += 50;
         }
-        vTaskDelay(pdMS_TO_TICKS(50));
-        elapsed += 50;
         ESP_LOGI(TAG, "Timeout – no press for target %d", target);
         NEXT_ROUND:
         // Turn off LEDs for that button
