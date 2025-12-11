@@ -15,6 +15,7 @@
 #include "esp_spiffs.h"
 #include "IRS_Control.h"
 #include "Sensory_Pad.h"
+#include "Game_Control.h"
 
 static const char *TAG = "MAIN";
 #define BUTTON_GPIO 21
@@ -63,10 +64,20 @@ void app_main(void)
     
     //load_button_sounds_from_nvs();
     load_button_states_from_nvs(); 
+    //start_whackamole_game();
+    //start_led_reg_game();
+    /*vTaskDelay(pdMS_TO_TICKS(1000));
+    ensure_led_ready();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    led_clear();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    led_show();
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    set_button_color(1, 70, 0, 0, 1.0f);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    led_show();*/
     //vTaskDelay(pdMS_TO_TICKS(1000));
     //vibration_init();
-    //vibration_set_state_motor1(true);
-    //vibration_set_intensity_motor1(75);
     //vTaskDelay(pdMS_TO_TICKS(3000));
     //vibration_set_state_motor2(false);
 
@@ -132,17 +143,30 @@ void app_main(void)
         //vibration_init();
         //vibration_set_state_motor1(true);
         //vibration_set_intensity_motor1(75);
+        //vibration_set_state_motor1(true);
+        //vibration_set_intensity_motor1(75);
         //vTaskDelay(pdMS_TO_TICKS(2000));
         //vibration_set_state_motor2(false);
         //vibration_set_intensity_motor2(50);
         /*ensure_irs_ready();
         uint16_t distance = irs_read_distance_mm();
         ESP_LOGI(TAG, "IRS Distance: %d mm", distance);*/
-        /*bool pressed1 = button_is_pressed(1);
+        
+        /*ESP_LOGI(TAG, "START--------------------------------------------------------");
+        bool pressed0 = button_is_pressed(0);
+        ESP_LOGI(TAG, "Button 0 pressed state: %d", pressed0);
+        vTaskDelay(pdMS_TO_TICKS(250));
+        bool pressed1 = button_is_pressed(1);
         ESP_LOGI(TAG, "Button 1 pressed state: %d", pressed1);
+        vTaskDelay(pdMS_TO_TICKS(250));
         bool pressed2 = button_is_pressed(2);
-        ESP_LOGI(TAG, "Button 2 pressed state: %d", pressed2);
-        vTaskDelay(pdMS_TO_TICKS(250));*/
+        ESP_LOGI(TAG, "Button 3 pressed state: %d", pressed2);
+        vTaskDelay(pdMS_TO_TICKS(250));
+        bool pressed3 = button_is_pressed(3);
+        ESP_LOGI(TAG, "Button 4 pressed state: %d", pressed3);
+        vTaskDelay(pdMS_TO_TICKS(250));
+        ESP_LOGI(TAG, "END--------------------------------------------------------");*/
+
         //ensure_speaker_ready();
         //speaker_set_volume(100);
         //speaker_play_wav("/spiffs/HappyNoise.wav");

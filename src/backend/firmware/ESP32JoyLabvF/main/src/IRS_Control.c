@@ -11,7 +11,7 @@ static TaskHandle_t irs_task_handle = NULL;
 static bool IRS_running = false;
 static VL53L0X_Dev_t sensor;
 
-#define PROXIMITY_THRESHOLD_MM 100  // Adjust this for sensitivity (e.g., 50–150mm)
+#define PROXIMITY_THRESHOLD_MM 3000  // Adjust this for sensitivity (e.g., 50–150mm)
 
 void irs_init(void) {
     gpio_set_direction(14, GPIO_MODE_OUTPUT);

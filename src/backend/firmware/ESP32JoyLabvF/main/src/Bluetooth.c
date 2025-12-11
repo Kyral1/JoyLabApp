@@ -293,12 +293,13 @@ void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
     ESP_LOGI(TAG, "Sent LED Whack result: points=%d, attempts=%d", points, attempts);
 }
 
-void evt_notify_led_reg_results(uint8_t interactions){
+void evt_notify_led_reg_results(uint8_t hits, uint8_t attempts) {
     if (!s.h_evts || s.conn_id == 0xFFFF) return;
 
-    uint8_t payload[2]; //event code + interactions
-    payload[0] = EVT_LED_REG_RESULT; // custom event code for LED Regular game
-    payload[1] = interactions;         // lower byte
+    uint8_t payload[3]; //event code + interactions
+    payload[0] = EVT_LED_REG_RESULT; // custom event code for LED Regular game  
+    payload[1] = hits;
+    payload[2] = attempts;     // lower byte
 
     esp_ble_gatts_send_indicate(
         s.ifx,
@@ -309,7 +310,7 @@ void evt_notify_led_reg_results(uint8_t interactions){
         false  // notification (not indication)
     );
 
-    ESP_LOGI(TAG, "Sent LED Regular game result: interactions=%d", interactions);
+    ESP_LOGI(TAG, "Sent LED Regular game result");
 }
 
 //BLE Notify helpers

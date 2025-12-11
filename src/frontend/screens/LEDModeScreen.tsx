@@ -17,6 +17,8 @@ export default function LEDModeScreen() {
     //LED Reg Mode states
     const [ledRegRunning, setLedRegRunning] = useState(false);
     const [ledRegInteractions, setLedRegInteractions] = useState(0);
+    const [ledRegHits, setLedRegHits] = useState(0);
+    const [ledRegAttempts, setLedRegAttempts] = useState(0);
 
     // BLE Frame Function 
     const sendFrame = async (frame: number[]) => {
@@ -41,8 +43,10 @@ export default function LEDModeScreen() {
             console.log("Game Update:", bytes);
           }
           else if (eventCode === 0x83) {
-            const newInteractions = bytes[1];
-            setLedRegInteractions(newInteractions);
+            const newLedRegHits = bytes[1];
+            setLedRegHits(newLedRegHits);
+            const newLedRegAttempts = bytes[2];
+            setLedRegAttempts(newLedRegAttempts);
             console.log("LED Reg Update:", bytes);
           }
         });
@@ -161,8 +165,12 @@ export default function LEDModeScreen() {
         {/* Scoreboard */}
         <View style={styles.scoreboard}>
           <View style={styles.scoreBox}>
-            <Text style={styles.scoreLabel}>Interactions</Text>
-            <Text style={styles.scoreValue}>{ledRegInteractions}</Text>
+            <Text style={styles.scoreLabel}>Hits</Text>
+            <Text style={styles.scoreValue}>{ledRegHits}</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Attempts</Text>
+            <Text style={styles.scoreValue}>{ledRegAttempts}</Text>
           </View>
         </View>
 

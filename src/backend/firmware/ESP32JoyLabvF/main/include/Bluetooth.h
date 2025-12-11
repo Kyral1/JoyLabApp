@@ -38,7 +38,7 @@ void ensure_irs_ready(void);
 void ensure_speaker_ready(void);
 void ble_notify_distance(uint16_t distance_mm);
 void evt_notify_led_whack_result(uint8_t points, uint8_t attempts);
-void evt_notify_led_reg_results(uint8_t interactions);
+void evt_notify_led_reg_results(uint8_t hits, uint8_t attempts);
 void ensure_force_ready(void);
 
 #ifdef __cplusplus

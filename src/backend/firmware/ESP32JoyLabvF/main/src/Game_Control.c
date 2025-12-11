@@ -20,6 +20,8 @@ static int led_mode_attempts = 0;
 static bool led_reg_game_running = false;
 static bool button_led_on[NUM_BUTTONS] = {false};
 static int led_reg_interactions = 0;
+static int led_reg_hits = 0;
+static int led_reg_attempts = 0;
 
 static bool sound_reg_game_running = false;
 static int sound_reg_points = 0;
@@ -62,6 +64,8 @@ static void sound_game_task(void *pvParameters) {
     }
     speaker_stop();
     current_playing_button = -1;
+    game_task_handle = NULL;
+    vTaskDelete(NULL);
 }
 
 static void LED_regular_game_task(void *pvParameters) {
@@ -69,31 +73,37 @@ static void LED_regular_game_task(void *pvParameters) {
     button_init_all();    // from Button_Control.c
     load_button_states_from_nvs(); 
     led_clear();
-    //irs_init();
     ensure_irs_ready();
 
     led_reg_game_running = true;
     ESP_LOGI(TAG, "Starting Regular LED game!");
     bool attempt_logged = false;
+    led_clear();
+    led_show();
 
     while(led_reg_game_running){
 
         //hand near sensor behavior 
         if(irs_is_hand_near()){
             led_reg_interactions++;
-            evt_notify_led_reg_results(led_reg_interactions);
+            led_reg_attempts++;
+            evt_notify_led_reg_results(led_reg_hits, led_reg_attempts);
             int i = 1;
             if(button_led_on[i]){
+                ESP_LOGI(TAG, "Button %d already ON", i);
                 button_led_on[i] = !button_led_on[i];
                 ButtonColor color = get_button_color(i);
                 for(int j = 0; j<NUM_BUTTONS;j++){
                     if(j==i){
                         set_button_color(i, 0, 0, 0, 0.0f);
+                        ESP_LOGI(TAG, "i is off");
                     }else{
                         set_button_color(j, 0, 0, 0, 0.0f);
+                        ESP_LOGI(TAG, "rest is off");
                     }
                 }
                 set_button_color(i, color.r, color.g, color.b, color.brightness);
+                ESP_LOGI(TAG, "color is set for i");
                 ESP_LOGI(TAG, "Button %d → LED ON", i);
                 ESP_LOGI(TAG, "Target %d -> r=%d g=%d b=%d br=%.2f",i, color.r, color.g, color.b, color.brightness);
             }else{
@@ -109,7 +119,8 @@ static void LED_regular_game_task(void *pvParameters) {
         for(int i = 0; i < NUM_BUTTONS; i++){
             if(button_is_pressed(i)){
                 led_reg_interactions ++;
-                evt_notify_led_reg_results(led_reg_interactions);
+                led_reg_hits ++;
+                evt_notify_led_reg_results(led_reg_hits, led_reg_attempts);
                 if(!button_led_on[i]){
                     button_led_on[i] = !button_led_on[i];
                     ButtonColor color = get_button_color(i);
@@ -236,9 +247,12 @@ static void whackamole_game_task(void *pvParameters) {
 void start_led_reg_game(void){
     if(game_task_handle == NULL){
         led_reg_interactions = 0;
-        evt_notify_led_reg_results(led_reg_interactions);
+        led_reg_hits = 0;
+        led_reg_attempts = 0;
+        evt_notify_led_reg_results(led_reg_hits, led_reg_attempts);
         for (int i = 0; i < NUM_BUTTONS; i++) {
-            button_led_on[i] = false;
+            if(i == 1){button_led_on[i] = true;}
+            else{button_led_on[i] = false;}
         }
         xTaskCreate(
             LED_regular_game_task,
