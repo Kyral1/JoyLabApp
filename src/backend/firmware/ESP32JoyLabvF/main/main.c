@@ -57,8 +57,8 @@ void app_main(void)
     filesystem_init();
     vTaskDelay(pdMS_TO_TICKS(1000));
     speaker_init();
-    speaker_set_volume(70);
-    speaker_play_wav("HappyNoise3.wav");
+    //speaker_set_volume(70);
+    //speaker_play_wav("HappyNoise3.wav");
     //ensure_irs_ready();
     //force_sensor_init();
     //speaker_play_mp3_file("/spiffs/test.mp3");
@@ -141,9 +141,9 @@ void app_main(void)
     //}
 
     while(1){
-        //vibration_init();
-        //vibration_set_state_motor1(true);
-        //vibration_set_intensity_motor1(75);
+        vibration_init();
+        vibration_set_state_motor1(true);
+        vibration_set_intensity_motor1(75);
         //vibration_set_state_motor1(true);
         //vibration_set_intensity_motor1(75);
         //vTaskDelay(pdMS_TO_TICKS(2000));

@@ -64,7 +64,7 @@ return (
           </View>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreLabel}>Attempts</Text>
-            <Text style={styles.scoreValue}>{hits}</Text>
+            <Text style={styles.scoreValue}>{attempts}</Text>
           </View>
         </View>
 
