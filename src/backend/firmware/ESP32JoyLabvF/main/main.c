@@ -56,8 +56,9 @@ void app_main(void)
     vTaskDelay(pdMS_TO_TICKS(1000)); 
     filesystem_init();
     vTaskDelay(pdMS_TO_TICKS(1000));
-    //speaker_init();
-    //speaker_set_volume(80);
+    speaker_init();
+    speaker_set_volume(70);
+    speaker_play_wav("HappyNoise3.wav");
     //ensure_irs_ready();
     //force_sensor_init();
     //speaker_play_mp3_file("/spiffs/test.mp3");

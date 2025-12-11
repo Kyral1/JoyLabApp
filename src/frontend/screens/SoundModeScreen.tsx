@@ -6,7 +6,8 @@ import { bleService } from '../services/BLEService';
 
 export default function SoundModeScreen() {
   const [gameRunning, setGameRunning] = useState(false);
-
+  const [hits, setHits] = useState(0);
+  const [attempts, setAttempts] = useState(0);
   // BLE Frame Function 
   const sendFrame = async (frame: number[]) => {
     try {
@@ -32,8 +33,13 @@ export default function SoundModeScreen() {
   useEffect(() => {
     const sub = bleService.enableNotifications((data: string) => {
       const bytes = Buffer.from(data, 'base64');
-      if (bytes[0] === 0xA0) {
-        console.log("Sound notification:", bytes);
+      const eventCode = bytes[0];
+      if (eventCode === 0x84) {
+        const newHits = bytes[1];
+        const newAttempts = bytes[2];
+        setHits(newHits);
+        setAttempts(newAttempts);
+        console.log("Game Update:", bytes);
         // handle Speaker state updates here
       }
     });
@@ -54,11 +60,11 @@ return (
         <View style={styles.scoreboard}>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreLabel}>Hits</Text>
-            <Text style={styles.scoreValue}>{"0"}</Text>
+            <Text style={styles.scoreValue}>{hits}</Text>
           </View>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreLabel}>Attempts</Text>
-            <Text style={styles.scoreValue}>{"0"}</Text>
+            <Text style={styles.scoreValue}>{hits}</Text>
           </View>
         </View>
 

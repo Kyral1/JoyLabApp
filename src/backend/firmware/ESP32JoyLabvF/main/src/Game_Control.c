@@ -24,9 +24,219 @@ static int led_reg_hits = 0;
 static int led_reg_attempts = 0;
 
 static bool sound_reg_game_running = false;
-static int sound_reg_points = 0;
+static bool button_sound_on[NUM_BUTTONS] = {false};
+static int sound_reg_hits = 0;
+static int sound_reg_attempts = 0;
 
-static void sound_game_task(void *pvParameters) {
+static void sound_game_task(void *pvParameters)
+{
+    ensure_speaker_ready();
+    button_init_all();
+    load_button_sounds_from_nvs();
+    //ensure_irs_ready();
+
+    sound_reg_game_running = true;
+    ESP_LOGI(TAG, "Starting Sound Recognition game!");
+
+    int current_playing_button = -1;
+
+    // Clear all sound states
+    for (int i = 0; i < NUM_BUTTONS; i++) {
+        button_sound_on[i] = false;
+    }
+
+    while (sound_reg_game_running)
+    {
+        /*------------------------------------------------------*
+         *                SENSOR BEHAVIOR (button 1)
+         *------------------------------------------------------*/
+        /*if (irs_is_hand_near()) {
+
+            int i = 1;      // sensor controls button 1
+            sound_reg_attempts++;
+            evt_notify_sound_reg_result(sound_reg_hits, sound_reg_attempts);
+
+            if (button_sound_on[i]) {
+                // TURN OFF
+                ESP_LOGI(TAG, "Sensor → sound OFF for button %d", i);
+                button_sound_on[i] = false;
+                speaker_stop_task();
+                current_playing_button = -1;
+
+            } else {
+                // TURN ON
+                ESP_LOGI(TAG, "Sensor → sound ON for button %d", i);
+
+                // stop anything else
+                if (current_playing_button != -1 && current_playing_button != i) {
+                    button_sound_on[current_playing_button] = false;
+                    speaker_stop_task();
+                }
+
+                const char *snd = get_button_sound(i);
+                speaker_play_wav(snd);
+
+                button_sound_on[i] = true;
+                current_playing_button = i;
+                //sound_reg_hits++;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(500));  // debounce
+        }*/
+
+
+        /*------------------------------------------------------*
+         *                BUTTON PRESS BEHAVIOR
+         *------------------------------------------------------*/
+        for (int i = 0; i < NUM_BUTTONS; i++)
+        {
+            if (button_is_pressed(i))
+            {
+                sound_reg_hits++;
+                evt_notify_sound_reg_result(sound_reg_hits, sound_reg_attempts);
+
+                if (!button_sound_on[i]) {
+                    /* TURN THIS BUTTON'S SOUND ON */
+
+                    ESP_LOGI(TAG, "Button %d → sound ON", i);
+
+                    // Stop previous sound if different
+                    if (current_playing_button != -1 && current_playing_button != i) {
+                        button_sound_on[current_playing_button] = false;
+                        speaker_stop_task();
+                    }
+
+                    // Play new sound
+                    const char *snd = get_button_sound(i);
+                    speaker_play_wav(snd);
+
+                    button_sound_on[i] = true;
+                    current_playing_button = i;
+                    //sound_reg_hits++;
+
+                } else {
+                    /* TURN THIS BUTTON'S SOUND OFF */
+
+                    ESP_LOGI(TAG, "Button %d → sound OFF", i);
+                    button_sound_on[i] = false;
+                    speaker_stop_task();
+                    current_playing_button = -1;
+                }
+
+                // Debounce: wait for release
+                while (button_is_pressed(i)) {
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(30));  // loop pacing
+    }
+
+
+    /*------------------------------------------------------*
+     *                    CLEANUP
+     *------------------------------------------------------*/
+    speaker_stop_task();
+    current_playing_button = -1;
+
+    game_task_handle = NULL;
+    vTaskDelete(NULL);
+}
+
+
+/*static void sound_game_task(void *pvParameters) {
+    ensure_speaker_ready();   
+    button_init_all();    
+    load_button_sounds_from_nvs();
+    ensure_irs_ready();
+
+    sound_reg_game_running = true;
+    ESP_LOGI(TAG, "Starting Sound Recognition game!");
+
+    int current_playing_button = -1;
+
+    while (sound_reg_game_running) {
+
+        // ======== SENSOR BEHAVIOR (parallel to LED game) ==========
+        if (irs_is_hand_near()) {
+            int i = 1;   // same as LED game, sensor controls button 1
+            sound_reg_attempts++;
+            evt_notify_sound_reg_result(sound_reg_hits, sound_reg_attempts);
+
+            if (button_sound_on[i]) {
+                // Toggle OFF
+                ESP_LOGI(TAG, "Sensor → sound OFF for button %d", i);
+                button_sound_on[i] = false;
+                speaker_stop_task();
+                current_playing_button = -1;
+            } else {
+                // Toggle ON
+                ESP_LOGI(TAG, "Sensor → sound ON for button %d", i);
+                button_sound_on[i] = true;
+                const char* sound = get_button_sound(i);
+                speaker_stop_task();   // stop other sounds
+                play_button_sound(i);
+                current_playing_button = i;
+                sound_reg_hits++;
+            }
+
+            vTaskDelay(pdMS_TO_TICKS(500));
+        }
+
+
+        // ========== BUTTON PRESS BEHAVIOR ==========
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+
+            if (button_is_pressed(i)) {
+                sound_reg_attempts++;
+                evt_notify_sound_reg_result(sound_reg_hits, sound_reg_attempts);
+
+                if (!button_sound_on[i]) {
+                    // TURN ON
+                    ESP_LOGI(TAG, "Button %d → sound ON", i);
+
+                    // stop previous
+                    if (current_playing_button != -1 && current_playing_button != i) {
+                        ESP_LOGI(TAG, "Stopping prior sound for button %d", current_playing_button);
+                        button_sound_on[current_playing_button] = false;
+                        speaker_stop();
+                    }
+
+                    // play new
+                    const char* sound = get_button_sound(i);
+                    play_button_sound(i);
+                    button_sound_on[i] = true;
+                    current_playing_button = i;
+                    sound_reg_hits++;
+
+                } else {
+                    // TURN OFF
+                    ESP_LOGI(TAG, "Button %d → sound OFF", i);
+                    button_sound_on[i] = false;
+                    speaker_stop();
+                    current_playing_button = -1;
+                }
+
+                // Debounce until release
+                while (button_is_pressed(i)) {
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(30));
+    }
+
+    // Cleanup
+    speaker_stop();
+    //for (int i = 0; i < NUM_BUTTONS; i++) button_sound_on[i] = false;
+
+    game_task_handle = NULL;
+    vTaskDelete(NULL);
+}*/
+
+/*static void sound_game_task(void *pvParameters) {
     ensure_speaker_ready();   // from bluetooth.c
     button_init_all();    // from Button_Control.c
     load_button_sounds_from_nvs();
@@ -66,7 +276,7 @@ static void sound_game_task(void *pvParameters) {
     current_playing_button = -1;
     game_task_handle = NULL;
     vTaskDelete(NULL);
-}
+}*/
 
 static void LED_regular_game_task(void *pvParameters) {
     ensure_led_ready();   // from bluetooth.c
@@ -277,7 +487,12 @@ void stop_led_reg_game(void) {
 
 void start_sound_game(void){
     if(game_task_handle == NULL){
-        sound_reg_points = 0;
+        sound_reg_attempts = 0;
+        sound_reg_hits = 0;
+        evt_notify_sound_reg_result(sound_reg_hits, sound_reg_attempts);
+        for (int i = 0; i < NUM_BUTTONS; i++) {
+            button_sound_on[i] = false;
+        }
         xTaskCreate(
             sound_game_task,
             "sound_game_task",

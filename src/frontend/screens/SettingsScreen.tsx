@@ -213,14 +213,16 @@ useEffect(() => {
       id: 0x01,
       label: "Animals",
       sounds: [
-        { id: 0x00, label: "HappyNoise.wav" }
+        { id: 0x00, label: "dog.wav"},
+          {id: 0x01, label: "cat.wav"},
+          {id: 0x01, label: "cow.wav"},
       ],
     },
     instruments: {
       id: 0x02,
       label: "Instruments",
       sounds: [
-        { id: 0x00, label: "HappyNoise.wav"}
+        { id: 0x00, label: "HappyNoiseMono.wav"}
       ],
     },
     beats: {

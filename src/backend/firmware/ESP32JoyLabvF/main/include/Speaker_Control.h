@@ -10,4 +10,6 @@ void speaker_mute(void);
 void speaker_stop(void);
 // Blocking beep
 void speaker_beep_blocking(uint16_t freq_hz, uint32_t duration_ms);
+//void speaker_play_wav(const char *path);
 void speaker_play_wav(const char *path);
+void speaker_stop_task(void);

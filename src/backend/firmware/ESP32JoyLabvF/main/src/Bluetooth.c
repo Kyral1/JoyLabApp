@@ -110,6 +110,7 @@ enum{
     EVT_GAME_RESULT = 0x81, //payload: 
     EVT_LED_WHACK_RESULT   = 0x82,
     EVT_LED_REG_RESULT = 0x83,
+    EVT_SOUND_RESULT = 0x84,
 };
 
 //settings snapshot
@@ -270,6 +271,27 @@ static void evt_notify_game_result_ms(uint16_t ms) {
   if (!s.h_evts || s.conn_id == 0xFFFF) return;
   uint8_t payload[3] = { EVT_GAME_RESULT, (uint8_t)(ms & 0xFF), (uint8_t)(ms >> 8) };
   esp_ble_gatts_send_indicate(s.ifx, s.conn_id, s.h_evts, sizeof(payload), payload, false);
+}
+
+void evt_notify_sound_reg_result(uint8_t hits, uint8_t attempts){
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    // Payload format: [event_code, points, attempts]
+    uint8_t payload[3];
+    payload[0] = EVT_SOUND_RESULT;
+    payload[1] = hits;
+    payload[2] = attempts;
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent Sound Results");
 }
 
 void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
