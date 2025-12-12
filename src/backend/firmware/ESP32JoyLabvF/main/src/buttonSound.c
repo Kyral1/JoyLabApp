@@ -8,7 +8,7 @@
 static const char *TAG = "BUTTON_SOUND";
 
 static char button_sounds[NUM_BUTTONS][MAX_SOUND_NAME_LEN] = {
-    "test.mp3", "test.mp3", "test.mp3", "test.mp3"
+    "HappyNoise.wav", "HappyNoise.wav", "HappyNoise.wav", "HappyNoise.wav"
 };
 
 void save_button_sound(int button, const char *filename){
@@ -72,5 +72,5 @@ void play_button_sound(int button)
     snprintf(path, sizeof(path), "/spiffs/%s", button_sounds[button]);
 
     ESP_LOGI(TAG, "Playing: %s", path);
-    speaker_play_mp3_file(path);
+    speaker_play_wav(path);
 }

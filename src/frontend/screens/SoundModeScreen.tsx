@@ -3,12 +3,49 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
+import { bleWristbandService } from '../services/BLEWristBandService';
+
 import { supabase } from "../../backend/app/services/supabase";
 
 export default function SoundModeScreen() {
   const [gameRunning, setGameRunning] = useState(false);
   const [hits, setHits] = useState(0);
   const [attempts, setAttempts] = useState(0);
+
+  const [motionDetected, setMotionDetected] = useState(0);
+  const [motionRunning, setMotionRunning] = useState(false);
+
+    const sendWBFrame = async (frame: number[]) => {
+        try{
+            await bleWristbandService.sendControlFrame(frame);
+            console.log("Frame sent:", frame);
+        } catch (e: any) {
+            console.error('Error sending frame to wristband:', e?.message ?? String(e));
+        }
+    };
+
+    useEffect(() => {
+        const sub = bleWristbandService.enableNotifications((data: string) => {
+          const bytes = Buffer.from(data, 'base64');
+          const eventCode = bytes[0];
+          if (eventCode === 0x87) {
+            const newMotionDetected = bytes[1];
+            setMotionDetected(newMotionDetected);
+            console.log("Motion Detected Update:", bytes);
+          }
+        });
+        return () => bleWristbandService.disableIMUNotifications();
+    }, []);
+
+    const startMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x01, 0x00]); // example CMD: start motion detection
+        setMotionRunning(true);
+    }
+
+    const stopMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x02, 0x00]); // example CMD: stop motion detection
+        setMotionRunning(false);
+    }
 
   // BLE Frame Function 
   const sendFrame = async (frame: number[]) => {
@@ -24,11 +61,13 @@ export default function SoundModeScreen() {
     await sendFrame([0x04, 0x06, 0x00]); // example CMD: start whack
     //await sendFrame([0x04, 0x05, 0x00]); //stop reg
       setGameRunning(true);
+      startMotionDetection();
     };
 
     const stopSoundGame = async () => {
         await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop
         setGameRunning(false);
+        stopMotionDetection();
         try {
           const {
             data: { user },
@@ -57,8 +96,13 @@ export default function SoundModeScreen() {
   useEffect(() => {
     const sub = bleService.enableNotifications((data: string) => {
       const bytes = Buffer.from(data, 'base64');
-      if (bytes[0] === 0xA0) {
-        console.log("Sound notification:", bytes);
+      const eventCode = bytes[0];
+      if (eventCode === 0x84) {
+        const newHits = bytes[1];
+        const newAttempts = bytes[2];
+        setHits(newHits);
+        setAttempts(newAttempts);
+        console.log("Game Update:", bytes);
         // handle Speaker state updates here
         setAttempts(prev => prev + 1);
         if (bytes[1] === 1) {
@@ -83,11 +127,15 @@ return (
         <View style={styles.scoreboard}>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreLabel}>Hits</Text>
-            <Text style={styles.scoreValue}>{"0"}</Text>
+            <Text style={styles.scoreValue}>{hits}</Text>
           </View>
           <View style={styles.scoreBox}>
             <Text style={styles.scoreLabel}>Attempts</Text>
-            <Text style={styles.scoreValue}>{"0"}</Text>
+            <Text style={styles.scoreValue}>{attempts}</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Motion</Text>
+            <Text style={styles.scoreValue}>{motionDetected}</Text>
           </View>
         </View>
 

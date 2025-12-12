@@ -11,6 +11,7 @@
 #include "driver/i2c.h"
 #include "esp_rom_sys.h"
 #include "math.h"
+#include "bluetooth.h"
 #include "Motion_task.h"
 
 static float prev_x = 0;
@@ -18,46 +19,20 @@ static float prev_y = 0;
 static float prev_z = 0;
 static bool first_sample = true;
 static uint32_t last_motion_time = 0;
+float x, y, z;
 
-static const char *TAG = "MAIN WB";
-//-----------BLE TESTING -----------
-void app_main(void)
-{
-    // Initialize NVS (required for BLE stack)
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+static TaskHandle_t motion_task_handle = NULL;
+static bool motion_running = false;
+static const char *TAG = "MOTION_TASK";
+static uint8_t motion_flags = 0;
 
-    // Initialize Bluetooth — starts advertising automatically
-    ESP_ERROR_CHECK(bluetooth_init());
-    ESP_LOGI(TAG, "Bluetooth initialized and advertising started");
-    vTaskDelay(pdMS_TO_TICKS(1000)); 
+static void motion_detection_task(void *pvParameters){
+    ensure_BMI_ready();
+    motion_running = true;
+    while(motion_running){
+        if (imu_read_accel(&x, &y, &z)) {
 
-    //ESP_LOGI(TAG, "Initializing IMU...");
-    //imu_init();
-    vTaskDelay(pdMS_TO_TICKS(300));
-    start_motion_detection();
-    vTaskDelay(pdMS_TO_TICKS(10000));
-    stop_motion_detection();
-
-    //float x, y, z;
-
-    while (1)
-    {
-        /*if (imu_motion_detected()) {
-            ESP_LOGW("MAIN", "ANY-MOTION DETECTED!");
-        }*/
-
-        /*if (imu_read_accel(&x, &y, &z)) {
-            ESP_LOGI("MAIN", "ACCEL  X=%.2f  Y=%.2f  Z=%.2f", x, y, z);
-            vTaskDelay(pdMS_TO_TICKS(1000));
-        }*/
-        /*if (imu_read_accel(&x, &y, &z)) {
-
-            ESP_LOGI("MAIN", "ACCEL X=%.2f Y=%.2f Z=%.2f", x, y, z);
+            //ESP_LOGI("MAIN", "ACCEL X=%.2f Y=%.2f Z=%.2f", x, y, z);
 
             // Skip the first sample (no previous reference)
                 if (!first_sample) {
@@ -76,6 +51,8 @@ void app_main(void)
                     if (dx >= THRESH || dy >= THRESH || dz >= THRESH) {
                         if (now - last_motion_time > MOTION_COOLDOWN) {
                             ESP_LOGW("MAIN", "MOTION DETECTED! ΔX=%.1f  ΔY=%.1f  ΔZ=%.1f", dx, dy, dz);
+                            motion_flags ++;
+                            evt_notify_motion_detection(motion_flags);
                             last_motion_time = now; 
                         }
                     }
@@ -88,12 +65,36 @@ void app_main(void)
             first_sample = false;
         }
 
-        vTaskDelay(pdMS_TO_TICKS(100));*/
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    motion_task_handle = NULL;
+    vTaskDelete(NULL);
+}
 
-        /*int o = imu_get_orientation();
-        ESP_LOGI("MAIN", "Orientation = %d", o);*/
 
-
-        vTaskDelay(pdMS_TO_TICKS(200));
+void start_motion_detection(void){
+    if(motion_task_handle == NULL){
+        ESP_LOGI(TAG, "Starting motion detection...");
+        motion_flags = 0;
+        evt_notify_motion_detection(motion_flags);
+        xTaskCreate(
+            motion_detection_task,
+            "motion_detection_task",
+            4096,
+            NULL,
+            5,
+            &motion_task_handle
+        );
     }
 }
+
+void stop_motion_detection(void) {
+    if (motion_task_handle != NULL) {
+        ESP_LOGI(TAG, "Stopping motion detection...");
+        ESP_LOGI(TAG, "Final motion flags: %d", motion_flags);
+        motion_running = false;   // signal to end loop
+    }
+    motion_task_handle = NULL;
+}
+
+

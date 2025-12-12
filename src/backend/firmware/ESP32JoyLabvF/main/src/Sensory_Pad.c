@@ -18,12 +18,13 @@ static uint8_t sensory_mode = SENSORY_NO_VIBRATION;
 static uint8_t const_intensity = 0;
 static uint8_t inc_min_intensity = 0;
 static uint8_t inc_max_intensity = 100;
-
+static uint8_t last_inc_intensity = 255;
+static bool last_inc_state = false;
 
 // ================= SENSORY TASK =================
 
 static void sensory_task(void *pvParameters) {
-    force_sensor_init();
+    ensure_force_ready();
     vibration_init();
 
     sensory_running = true;
@@ -37,29 +38,44 @@ static void sensory_task(void *pvParameters) {
 
         case SENSORY_NO_VIBRATION:
             vibration_set_state_motor1(false);
-            vibration_set_state_motor2(false);
+            //vibration_set_state_motor2(false);
             break;
 
         case SENSORY_CONSTANT_VIBRATION:
-            if (force > 0.3f) {
-                vibration_set_state_motor1(true);
-                vibration_set_state_motor2(true);
-
+            bool active = force >= 0.1f;
+            vibration_set_state_motor1(active);
+            //vibration_set_state_motor2(active);
+            if (active) {
                 vibration_set_intensity_motor1(const_intensity);
-                vibration_set_intensity_motor2(const_intensity);
-            } else {
-                vibration_set_state_motor1(false);
-                vibration_set_state_motor2(false);
+                //vibration_set_intensity_motor2(const_intensity);
             }
             break;
 
         case SENSORY_INCREASING_VIBRATION:
-            if (force <= 0.3f) {
+            bool active_inc = force >= 0.1f;
+            if (active_inc != last_inc_state) {
+                vibration_set_state_motor1(active_inc);
+                //vibration_set_state_motor2(active_inc);
+                last_inc_state = active_inc;
+            }
+            if(!active_inc){
+                break;
+            }
+
+            float percent = force / 25.0f;
+            if (percent > 1.0f) percent = 1.0f;
+            intensity = inc_min_intensity + (uint8_t)((inc_max_intensity - inc_min_intensity) * percent);
+            if (intensity != last_inc_intensity) {
+                vibration_set_intensity_motor1(intensity);
+                //vibration_set_intensity_motor2(intensity);
+                last_inc_intensity = intensity;
+            }
+            /*if (force <= 0.1f) {
                 vibration_set_state_motor1(false);
-                vibration_set_state_motor2(false);
+                //vibration_set_state_motor2(false);
             } else {
                 vibration_set_state_motor1(true);
-                vibration_set_state_motor2(true);
+                //vibration_set_state_motor2(true);
 
                 float percent = force / 25.0f;
                 if (percent > 1.0f) percent = 1.0f;
@@ -68,15 +84,15 @@ static void sensory_task(void *pvParameters) {
                 intensity = inc_min_intensity + (uint8_t)((inc_max_intensity - inc_min_intensity) * percent);
 
                 vibration_set_intensity_motor1(intensity);
-                vibration_set_intensity_motor2(intensity);
-            }
+                //vibration_set_intensity_motor2(intensity);
+            }*/
             break;
         }
 
         vTaskDelay(pdMS_TO_TICKS(20));
     }
-    vTaskDelete(sensory_task_handle);
     sensory_task_handle = NULL;
+    vTaskDelete(sensory_task_handle);
 }
 
 void sensory_stop(void) {
@@ -86,6 +102,7 @@ void sensory_stop(void) {
         vibration_set_state_motor2(false);
         ESP_LOGI(TAG, "Sensory mode stopped");
     }
+    sensory_task_handle = NULL;
 }
 
 //sensory no vibratio start

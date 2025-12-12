@@ -32,6 +32,9 @@ esp_err_t bluetooth_init(void);
 
 // Deinitializes BLE and stops advertising (optional for shutdown/restart).
 void bluetooth_deinit(void);
+void ensure_BMI_ready(void);
+void evt_notify_motion_detection(uint8_t motion_flags);
+
 
 
 #ifdef __cplusplus

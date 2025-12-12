@@ -1,8 +1,8 @@
 #include "driver/spi_master.h"
 #include "esp_log.h"
 
-#define DATA_PIN   1   // DotStar DI 
-#define CLOCK_PIN  3   // DotStar CI 
+#define DATA_PIN   15//1   // DotStar DI 
+#define CLOCK_PIN  18//3   // DotStar CI 
 #define NUM_LEDS   72
 
 static const char *TAG = "DOTSTAR";
@@ -53,5 +53,5 @@ void dotstar_show(uint8_t *rgb, int count) {
     t.tx_buffer = end;
     spi_device_transmit(spi, &t);
 
-    ESP_LOGI(TAG, "DotStar data sent");
+    //ESP_LOGI(TAG, "DotStar data sent");
 }

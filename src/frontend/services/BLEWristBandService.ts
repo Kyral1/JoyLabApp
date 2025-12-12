@@ -110,6 +110,29 @@ class BLEWristbandService {
     console.log('IMU notifications enabled for JoyLabWristband');
   }
 
+    async enableNotifications(callback: (data: string) => void) {
+    if (!this.device) throw new Error('Not connected');
+
+    const chars = await this.device.characteristicsForService(SERVICE_UUID);
+    const evtChar = chars.find(c => c.uuid.toLowerCase() === EVTS_UUID);
+    if (!evtChar) throw new Error('Events characteristic not found');
+
+    this.eventChar = evtChar;
+
+    // Subscribe for notifications
+    this.notifySub = evtChar.monitor((error, characteristic) => {
+      if (error) {
+        console.error('BLE notify error:', error);
+        return;
+      }
+      if (characteristic?.value) {
+        callback(characteristic.value); // base64-encoded string
+      }
+    });
+
+    console.log('BLE notifications enabled for Events characteristic');
+  }
+
   // Stop IMU notifications
   disableIMUNotifications() {
     if (this.notifySub) {

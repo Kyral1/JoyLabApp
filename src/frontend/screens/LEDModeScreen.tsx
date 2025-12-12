@@ -1,12 +1,12 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, use} from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 import { supabase } from "../../backend/app/services/supabase";
-//import { time } from "console";
-//import { timeStamp } from "console";
+import { bleWristbandService } from '../services/BLEWristBandService';
+//import { start } from "repl";
 //import { start } from "repl";
 
 
@@ -18,6 +18,34 @@ export default function LEDModeScreen() {
 
     //LED Reg Mode states
     const [ledRegRunning, setLedRegRunning] = useState(false);
+    const [ledRegInteractions, setLedRegInteractions] = useState(0);
+    const [ledRegHits, setLedRegHits] = useState(0);
+    const [ledRegAttempts, setLedRegAttempts] = useState(0);
+
+    const [motionDetected, setMotionDetected] = useState(0);
+    const [motionRunning, setMotionRunning] = useState(false);
+
+    const sendWBFrame = async (frame: number[]) => {
+        try{
+            await bleWristbandService.sendControlFrame(frame);
+            console.log("Frame sent:", frame);
+        } catch (e: any) {
+            console.error('Error sending frame to wristband:', e?.message ?? String(e));
+        }
+    };
+
+    useEffect(() => {
+        const sub = bleWristbandService.enableNotifications((data: string) => {
+          const bytes = Buffer.from(data, 'base64');
+          const eventCode = bytes[0];
+          if (eventCode === 0x87) {
+            const newMotionDetected = bytes[1];
+            setMotionDetected(newMotionDetected);
+            console.log("Motion Detected Update:", bytes);
+          }
+        });
+        return () => bleWristbandService.disableIMUNotifications();
+    }, []);
 
     // BLE Frame Function 
     const sendFrame = async (frame: number[]) => {
@@ -40,23 +68,41 @@ export default function LEDModeScreen() {
             setHits(newHits);
             setAttempts(newAttempts);
             console.log("Game Update:", bytes);
-            }
+          }
+          else if (eventCode === 0x83) {
+            const newLedRegHits = bytes[1];
+            setLedRegHits(newLedRegHits);
+            const newLedRegAttempts = bytes[2];
+            setLedRegAttempts(newLedRegAttempts);
+            console.log("LED Reg Update:", bytes);
+          }
         });
         return () => bleService.disableNotifications();
     }, []);
 
+    const startMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x01, 0x00]); // example CMD: start motion detection
+        setMotionRunning(true);
+    }
+
+    const stopMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x02, 0x00]); // example CMD: stop motion detection
+        setMotionRunning(false);
+    }
     // Whack-A-Mole
     const startWhackGame = async () => {
         await sendFrame([0x04, 0x03, 0x00]); // example CMD: start whack
         //await sendFrame([0x04, 0x05, 0x00]); //stop reg
         setGameRunning(true);
         setLedRegRunning(false);
+        startMotionDetection();
     };
 
     //STATS: Can collect data from here 
     const stopWhackGame = async () => {
         await sendFrame([0x04, 0x02, 0x00]); // example CMD: stop
         setGameRunning(false);
+        stopMotionDetection();
         //when the game stops, the variable hit is the number of points, and attempt is the number of tries (based on IR sensor)
         //everytime the game stops, aka when this function is called you can add those numbers with a date and time stamp as an entry to a DB
         try {
@@ -94,11 +140,14 @@ export default function LEDModeScreen() {
         //await sendFrame([0x04, 0x02, 0x00]); //stop whack
         setGameRunning(false);
         setLedRegRunning(true);
+        startMotionDetection();
     }
 
     const stopLedRegGame = async () => {
         await sendFrame([0x04, 0x05, 0x00]); // example CMD: stop LED regular mode
         setLedRegRunning(false);
+        //log interactions to DB
+        stopMotionDetection();
         try {
           const {
             data: { user },
@@ -147,6 +196,10 @@ export default function LEDModeScreen() {
             <Text style={styles.scoreLabel}>Attempts</Text>
             <Text style={styles.scoreValue}>{attempts}</Text>
           </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Motion</Text>
+            <Text style={styles.scoreValue}>{motionDetected}</Text>
+          </View>
         </View>
 
         {/* Start / Stop buttons */}
@@ -176,6 +229,22 @@ export default function LEDModeScreen() {
         <Text style={styles.description}>
           Description: Push buttons to turn them on and off.
         </Text>
+        
+        {/* Scoreboard */}
+        <View style={styles.scoreboard}>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Hits</Text>
+            <Text style={styles.scoreValue}>{ledRegHits}</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Attempts</Text>
+            <Text style={styles.scoreValue}>{ledRegAttempts}</Text>
+          </View>
+          <View style={styles.scoreBox}>
+            <Text style={styles.scoreLabel}>Motion</Text>
+            <Text style={styles.scoreValue}>{motionDetected}</Text>
+          </View>
+        </View>
 
         {/* Start / Stop buttons */}
         <View style={[styles.row, { marginTop: 20 }]}>

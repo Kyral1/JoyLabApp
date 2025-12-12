@@ -10,7 +10,7 @@ static const char *TAG = "BUTTON";
 #define DEBOUNCE_DELAY_MS 50
 
 //Button Pins Mapping (change when ESP is configured)
-const int button_pins[NUM_BUTTONS] = {4, 0, 26, 27};
+const int button_pins[NUM_BUTTONS] = {4, 3, 26, 27};
 
 //resets each pin before config
 void button_init_all(void) {
@@ -31,5 +31,9 @@ bool button_is_pressed(int index) {
     vTaskDelay(pdMS_TO_TICKS(DEBOUNCE_DELAY_MS));  // simple debounce
     int second_read = gpio_get_level(button_pins[index]);
 
-    return (first_read == 1 && second_read == 1);
+    if(index == 1){
+        return(first_read == 0 && second_read == 0);
+    }else{
+        return (first_read == 1 && second_read == 1);
+    }
 }

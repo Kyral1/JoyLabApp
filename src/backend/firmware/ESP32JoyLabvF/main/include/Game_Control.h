@@ -12,3 +12,6 @@ void start_led_reg_game(void);
 
 void start_sound_game(void);
 void stop_sound_game(void);
+
+void start_dual_mode_game(void);
+void stop_dual_mode_game(void);

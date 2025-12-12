@@ -25,6 +25,7 @@
 //extern vars
 extern int led_mode_points;
 extern int led_mode_attempts;
+static uint8_t last_volume = 70;
 
 // ---- UUIDs (match your app) -------------------------------------------------
 #define SRV_UUID       0x1234
@@ -102,12 +103,17 @@ enum{
     CMD_LED_REG_STOP = 0x05,
     CMD_SOUND_START = 0x06,
     CMD_SOUND_STOP = 0x07,
+    CMD_DUAL_START = 0x08,
+    CMD_DUAL_STOP = 0x09,
 };
 
 //EVENTS (esp32 -> phone)
 enum{
     EVT_GAME_RESULT = 0x81, //payload: 
     EVT_LED_WHACK_RESULT   = 0x82,
+    EVT_LED_REG_RESULT = 0x83,
+    EVT_SOUND_RESULT = 0x84,
+    EVT_DUAL_RESULT = 0x85,
 };
 
 //settings snapshot
@@ -221,7 +227,7 @@ void ensure_irs_ready(void){
   if(!s.irs_ready){irs_init(); s.irs_ready = true;}
 }
 
-static void ensure_force_ready(void){
+void ensure_force_ready(void){
   if(!s.force_ready){force_sensor_init(); s.force_ready = true;}
 }
 // Common wrapper to add a characteristic and return its handle later in ADD_CHAR_EVT.
@@ -270,6 +276,48 @@ static void evt_notify_game_result_ms(uint16_t ms) {
   esp_ble_gatts_send_indicate(s.ifx, s.conn_id, s.h_evts, sizeof(payload), payload, false);
 }
 
+void evt_notify_dual_mode_result(uint8_t hits, uint8_t attempts){
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    // Payload format: [event_code, points, attempts]
+    uint8_t payload[3];
+    payload[0] = EVT_DUAL_RESULT;
+    payload[1] = hits;
+    payload[2] = attempts;
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent Dual Mode Results");
+}
+
+void evt_notify_sound_reg_result(uint8_t hits, uint8_t attempts){
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    // Payload format: [event_code, points, attempts]
+    uint8_t payload[3];
+    payload[0] = EVT_SOUND_RESULT;
+    payload[1] = hits;
+    payload[2] = attempts;
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent Sound Results");
+}
+
 void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
     if (!s.h_evts || s.conn_id == 0xFFFF) return;
 
@@ -289,6 +337,26 @@ void evt_notify_led_whack_result(uint8_t points, uint8_t attempts) {
     );
 
     ESP_LOGI(TAG, "Sent LED Whack result: points=%d, attempts=%d", points, attempts);
+}
+
+void evt_notify_led_reg_results(uint8_t hits, uint8_t attempts) {
+    if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    uint8_t payload[3]; //event code + interactions
+    payload[0] = EVT_LED_REG_RESULT; // custom event code for LED Regular game  
+    payload[1] = hits;
+    payload[2] = attempts;     // lower byte
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent LED Regular game result");
 }
 
 //BLE Notify helpers
@@ -372,14 +440,15 @@ static void cmd_led_set_pixel(uint8_t idx, uint8_t r, uint8_t g, uint8_t b, uint
 static void cmd_audio_set_state(uint8_t on){
   ensure_speaker_ready();  // ensure pin is ready
   bool state = (on > 0);
-  static uint8_t last_volume = 50;
+  //static uint8_t last_volume = 70;
   if (state){
     //speaker_play_wav_mem(_binary_AlarmSound_wav_start, _binary_AlarmSound_wav_end);
-    speaker_set_volume(last_volume);
-    speaker_beep_blocking(1000, 500);
+    //speaker_set_volume(last_volume);
+    speaker_play_wav("/spiffs/HappyNoise.wav");
+    //speaker_beep_blocking(1000, 500);
   }else{ //muting to turn off
     last_volume = speaker_get_volume();
-    speaker_mute();
+    //speaker_mute();
   }
   ESP_LOGI(TAG, "BLE Speaker toggle: %s", state ? "ON" : "OFF");
 }
@@ -387,6 +456,7 @@ static void cmd_audio_set_state(uint8_t on){
 static void cmd_audio_set_volume(uint8_t vol) {
     ensure_speaker_ready(); 
     speaker_set_volume(vol);
+    last_volume = vol;
     ESP_LOGI(TAG, "BLE Speaker volume: %d%%", vol);
 }
 
@@ -394,16 +464,28 @@ static void cmd_audio_set_sound_file(const char *filename, uint8_t idx){
   if(idx == 111){
     for(int i = 0; i<NUM_BUTTONS; i++){
       ESP_LOGI(TAG, "(ALL) Setting sound for button %d to %s", i, filename);
-      set_button_sound(i, filename);
+      save_button_sound(i, filename);
       save_button_sound_persistent(i, filename);
     }
   }else if(idx<4){
     ESP_LOGI(TAG, "Setting sound for button %d to %s", idx, filename);
-    set_button_sound(idx, filename);
+    save_button_sound(idx, filename);
     save_button_sound_persistent(idx, filename);
   }
-
 }
+
+static void cmd_audio_set_sound_file_from_frame(uint8_t *data, uint8_t len)
+{
+    if (len < 2) return; // must have filename + idx
+    uint8_t idx = data[len - 1];  // last byte of payload
+    // Null-terminate filename
+    data[len - 1] = '\0';
+    const char *filename = (char *)data;
+    ESP_LOGI(TAG, "Received sound filename='%s' idx=%d", filename, idx);
+    cmd_audio_set_sound_file(filename, idx);
+}
+
+
 
 static void cmd_audio_preview_sound(uint8_t idx){
   if(idx == 111){idx = 0;} //preview first button if ALL
@@ -453,14 +535,14 @@ static void cmd_motor_set_intensity(uint8_t motor_id, uint8_t intensity) {
     }
 }*/
 
-static void force_continuous_task(void *pvParameters){
+/*static void force_continuous_task(void *pvParameters){
   ensure_force_ready();
   while(1){
     float pressure = force_sensor_read();
     ble_notify_force(pressure);
     vTaskDelay(pdMS_TO_TICKS(500));
   }
-}
+}*/
 
 /*static void start_irs_continuous_task(void) {
     if (irs_task_handle == NULL) {
@@ -478,7 +560,7 @@ static void force_continuous_task(void *pvParameters){
     }
 }*/
 
-static void start_force_continuous_task(void){
+/*static void start_force_continuous_task(void){
   if(force_task_handle == NULL){
     xTaskCreate(force_continuous_task, 
       "force_task", 
@@ -489,7 +571,7 @@ static void start_force_continuous_task(void){
   }else{
     ESP_LOGW(TAG, "Force task already running");
   }
-}
+}*/
 
 // Stop continuous ranging + BLE updates
 /*static void stop_irs_continuous_task(void) {
@@ -502,7 +584,7 @@ static void start_force_continuous_task(void){
     }
 }*/
 
-static void stop_force_continuous_task(void){
+/*static void stop_force_continuous_task(void){
   if(force_task_handle != NULL){
     ESP_LOGI(TAG, "Stopping Force Sensor updates...");
     vTaskDelete(force_task_handle);
@@ -510,7 +592,7 @@ static void stop_force_continuous_task(void){
   }else{
     ESP_LOGW(TAG, "Force task not running");
   }
-}
+}*/
 
 static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
   if (n < 3) return;
@@ -543,7 +625,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           if (len >= 1) cmd_audio_set_volume(pl[0]);
           break;
         case CMD_AU_SET_SOUND_FILE:
-          if(len>=2) cmd_audio_set_sound_file(pl[0], pl[1]); //pl[0]=filename, pl[1]=button index
+          if(len>=2) cmd_audio_set_sound_file_from_frame(pl, len); //pl[0]=filename, pl[1]=button index
           break;
         case CMD_AU_PREVIEW_SOUND:
           if(len>=1) cmd_audio_preview_sound(pl[0]);
@@ -577,7 +659,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
       }
       break;
     
-    case CAT_FORCE:
+    /*case CAT_FORCE:
       switch (cmd) {
         case CMD_FORCE_START_CONT:
           start_force_continuous_task();
@@ -585,7 +667,7 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
         case CMD_FORCE_END_CONT:
           stop_force_continuous_task();
           break;
-      }break;
+      }break;*/
     
     case CAT_GAME:
       switch (cmd) {
@@ -606,6 +688,12 @@ static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
           break;
         case CMD_SOUND_STOP:
           stop_sound_game();
+          break;
+        case CMD_DUAL_START:
+          start_dual_mode_game(); 
+          break;
+        case CMD_DUAL_STOP:
+          stop_dual_mode_game();
           break;
       }break;
 
