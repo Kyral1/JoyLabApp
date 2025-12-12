@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from "react";
-import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal, Alert, Touchable} from 'react-native';
+import { View, Text, StyleSheet, Switch,TouchableOpacity, ScrollView, Modal, Alert} from 'react-native';
 import Slider from '@react-native-community/slider';
 import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
@@ -213,23 +213,38 @@ useEffect(() => {
       id: 0x01,
       label: "Animals",
       sounds: [
-        { id: 0x00, label: "dog.wav"},
-          {id: 0x01, label: "cat.wav"},
-          {id: 0x01, label: "cow.wav"},
+        { id: 0x00, label: "CatMeow.wav" },
+        { id: 0x01, label: "Chicken.wav" },
+        { id: 0x02, label: "Cow.wav" },
+        { id: 0x03, label: "DogBark.wav" },
+        { id: 0x04, label: "Duck.wav" },
+        { id: 0x05, label: "Goat.wav" },
+        { id: 0x06, label: "Sheep.wav" },
       ],
     },
     instruments: {
       id: 0x02,
-      label: "Instruments",
+      label: "Percussion",
       sounds: [
-        { id: 0x00, label: "HappyNoiseMono.wav"}
+        { id: 0x00, label: "Drum01.wav" },
+        { id: 0x01, label: "Drum02.wav "},
+        { id: 0x02, label: "KickDrum01.wav" },
+        { id: 0x03, label: "KickDrum02.wav" },
+        { id: 0x04, label: "Rattle01.wav" },
+        { id: 0x05, label: "Rattle02.wav" },
+        { id: 0x06, label: "Glockenspiel.wav" },
       ],
     },
     beats: {
       id: 0x03,
-      label: "Beats",
+      label: "Song",
       sounds: [
-        { id: 0x00, label: "HappyNoise.wav" }
+        { id: 0x00, label: "BaroqueHornpipe.wav" },
+        { id: 0x01, label: "FourSeasons.wav" },
+        { id: 0x02, label: "HappyNoise.wav" },
+        { id: 0x03, label: "ItalianSong.wav" },
+        { id: 0x04, label: "LemonSlice.wav" },
+        { id: 0x05, label: "Levity.wav" },
       ],
     },
   } as const;
