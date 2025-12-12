@@ -9,6 +9,7 @@
 #include "esp_gatt_common_api.h"
 #include "Bluetooth.h"
 #include "IMU_Control.h"
+#include "Motion_task.h"
 
 #define TAG "BT_JLWristBand"
 
@@ -21,6 +22,17 @@
 // ---- Advertising ------------------------------------------------------------
 static const char *kDeviceName = "JoyLabWristband";
 
+//Categories (Cat)
+typedef enum {
+    CAT_ACCEL = 0x01,
+};
+
+//Accelerometer Commands
+enum{
+  CMD_MOTION_START = 0x01,
+  CMD_MOTION_STOP = 0x02,
+};
+
 // ============================== STATE ========================================
 typedef struct {
   esp_gatt_if_t ifx;
@@ -28,6 +40,7 @@ typedef struct {
   uint16_t srv_handle;
   uint16_t h_ctrl;
   uint16_t h_evts;
+  bool imu_ready;
 } ble_ctx_t;
 
 static ble_ctx_t s = {
@@ -67,9 +80,15 @@ static esp_ble_adv_data_t kAdvData = {
     .p_service_uuid    = kSrvUuid128,
 };
 
+// =========================== SMALL HELPERS ===================================
+
 static inline void start_advertising(void) {
     esp_ble_gap_start_advertising(&kAdvParams);
     ESP_LOGI(TAG, "Started advertising");
+}
+
+void ensure_BMI_ready(void){
+    if(!s.imu_ready){imu_init(); s.imu_ready = true;}
 }
 
 static esp_err_t add_char16(uint16_t uuid16, uint16_t perms, uint8_t props,
@@ -93,10 +112,54 @@ void ble_notify_imu(float gx, float gy, float gz) {
   esp_ble_gatts_send_indicate(s.ifx, s.conn_id, s.h_evts, sizeof(payload), payload, false);
 }
 
+// ========================== EVENTS (Notify) ==================================
+
+void evt_notify_motion_detection(uint8_t motion_flags){
+  if (!s.h_evts || s.conn_id == 0xFFFF) return;
+
+    // Payload format: [event_code, points, attempts]
+    uint8_t payload[2];
+    payload[0] = 0x87;
+    payload[1] = motion_flags;
+
+    esp_ble_gatts_send_indicate(
+        s.ifx,
+        s.conn_id,
+        s.h_evts,
+        sizeof(payload),
+        payload,
+        false  // notification (not indication)
+    );
+
+    ESP_LOGI(TAG, "Sent Dual Mode Results");
+}
+
 // ============================ Control Handler ===========================
-static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
+/*static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
   // You can add simple commands here like start/stop IMU streaming
   ESP_LOGI(TAG, "BLE command received, len=%d", n);
+}*/
+static void ctrl_handle_frame(const uint8_t *buf, uint16_t n) {
+  if (n < 3) return;
+  uint8_t cat = buf[0], cmd = buf[1], len = buf[2];
+  if (n < (uint16_t)(3 + len)) return;     // malformed
+  const uint8_t *pl = buf + 3;
+
+  switch (cat) {
+    case CAT_ACCEL:
+      switch (cmd) {
+        case CMD_MOTION_START:
+          start_motion_detection();
+          break;
+        case CMD_MOTION_STOP:
+          stop_motion_detection();
+          break;
+      }
+      break;
+    default:
+      // Unknown category — safely ignore
+    break;
+  }
 }
 
 // ============================= GAP CALLBACK =============================

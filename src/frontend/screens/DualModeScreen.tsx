@@ -3,11 +3,49 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
+import { bleWristbandService } from '../services/BLEWristBandService';
+
 
 export default function DualModeScreen() {
   const [gameRunning, setGameRunning] = useState(false);
   const [hits, setHits] = useState(0);
   const [attempts, setAttempts] = useState(0);
+
+  const [motionDetected, setMotionDetected] = useState(0);
+  const [motionRunning, setMotionRunning] = useState(false);
+
+    const sendWBFrame = async (frame: number[]) => {
+        try{
+            await bleWristbandService.sendControlFrame(frame);
+            console.log("Frame sent:", frame);
+        } catch (e: any) {
+            console.error('Error sending frame to wristband:', e?.message ?? String(e));
+        }
+    };
+
+    useEffect(() => {
+        const sub = bleWristbandService.enableNotifications((data: string) => {
+          const bytes = Buffer.from(data, 'base64');
+          const eventCode = bytes[0];
+          if (eventCode === 0x87) {
+            const newMotionDetected = bytes[1];
+            setMotionDetected(newMotionDetected);
+            console.log("Motion Detected Update:", bytes);
+          }
+        });
+        return () => bleWristbandService.disableIMUNotifications();
+    }, []);
+
+    const startMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x01, 0x00]); // example CMD: start motion detection
+        setMotionRunning(true);
+    }
+
+    const stopMotionDetection = async () => {
+        await sendWBFrame([0x1, 0x02, 0x00]); // example CMD: stop motion detection
+        setMotionRunning(false);
+    }
+
   // BLE Frame Function 
   const sendFrame = async (frame: number[]) => {
     try {
@@ -22,11 +60,13 @@ export default function DualModeScreen() {
     await sendFrame([0x04, 0x08, 0x00]); // example CMD: start whack
     //await sendFrame([0x04, 0x05, 0x00]); //stop reg
       setGameRunning(true);
+      startMotionDetection();
     };
 
     const stopDualGame = async () => {
         await sendFrame([0x04, 0x09, 0x00]); // example CMD: stop
         setGameRunning(false);
+        stopMotionDetection();
     };
 
   // Handle BLE notifications - if no notifications for sound can delete
@@ -66,6 +106,10 @@ return (
             <Text style={styles.scoreLabel}>Attempts</Text>
             <Text style={styles.scoreValue}>{attempts}</Text>
           </View>
+            <View style={styles.scoreBox}>
+              <Text style={styles.scoreLabel}>Motion</Text>
+              <Text style={styles.scoreValue}>{motionDetected}</Text>
+            </View>
         </View>
 
         {/* Start / Stop buttons */}

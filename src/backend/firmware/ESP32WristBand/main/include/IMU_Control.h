@@ -5,6 +5,7 @@
 extern struct bmi3_dev imu_dev;
 
 void imu_init(void);
+//void imu_init1(void);
 
 bool imu_motion_detected(void);
 
