@@ -141,9 +141,9 @@ void app_main(void)
     //}
 
     while(1){
-        vibration_init();
-        vibration_set_state_motor1(true);
-        vibration_set_intensity_motor1(75);
+        //vibration_init();
+        //vibration_set_state_motor1(true);
+        //vibration_set_intensity_motor1(75);
         //vibration_set_state_motor1(true);
         //vibration_set_intensity_motor1(75);
         //vTaskDelay(pdMS_TO_TICKS(2000));

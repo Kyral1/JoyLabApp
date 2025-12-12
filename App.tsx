@@ -106,7 +106,7 @@ function MainTabs() {
 }
 
 function RootNavigator() {
-  const user = true; //useAuth(); // comes from AuthContext
+  const user = useAuth(); // comes from AuthContext
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
