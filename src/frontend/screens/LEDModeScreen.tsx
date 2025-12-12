@@ -5,6 +5,8 @@ import {Picker} from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 import { supabase } from "../../backend/app/services/supabase";
+//import { time } from "console";
+//import { timeStamp } from "console";
 //import { start } from "repl";
 
 
@@ -72,7 +74,6 @@ export default function LEDModeScreen() {
               user_id: user.id,
               hits: hits,
               attempts: attempts,
-              created_at: timestamp,
               mode: "whack-a-mole"
             },
           ]);
@@ -98,8 +99,33 @@ export default function LEDModeScreen() {
     const stopLedRegGame = async () => {
         await sendFrame([0x04, 0x05, 0x00]); // example CMD: stop LED regular mode
         setLedRegRunning(false);
-    }
+        try {
+          const {
+            data: { user },
+            error: userError,   
+          } = await supabase.auth.getUser();
+          if (userError || !user) {
+            console.error("User not logged in; cannot save LED regular stats.");
+            return;
+          } 
 
+          const { error } = await supabase.from('led_reg_stats').insert([
+            {
+              user_id: user.id,
+              hits: hits,
+              mode: "led-regular",
+            },
+          ]);
+
+          if (error) {
+            console.error("Error saving stats:", error.message);
+          } else {
+            console.log("Stats saved successfully");
+          }
+        } catch (error) {
+          console.error
+        }
+    }
 
  return (
     <ScrollView contentContainerStyle={styles.container}>

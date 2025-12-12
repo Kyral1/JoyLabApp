@@ -3,9 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { Picker } from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
+import { supabase } from "../../backend/app/services/supabase";
 
 export default function SoundModeScreen() {
   const [gameRunning, setGameRunning] = useState(false);
+  const [hits, setHits] = useState(0);
+  const [attempts, setAttempts] = useState(0);
 
   // BLE Frame Function 
   const sendFrame = async (frame: number[]) => {
@@ -26,6 +29,28 @@ export default function SoundModeScreen() {
     const stopSoundGame = async () => {
         await sendFrame([0x04, 0x07, 0x00]); // example CMD: stop
         setGameRunning(false);
+        try {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser();
+          if (!user) return; 
+          const { error } = await supabase.from('sound_stats').insert([
+            {
+              user_id: user.id,
+              hits: hits,
+              attempts: attempts,
+              mode: "sound-mode",
+            },
+          ]);
+          if (error) {
+            console.error("Error saving stats:", error.message);      
+          } else { 
+            console.log("Stats saved successfully");
+          }
+        } catch (err) {
+            console.error("Unexpected error:", err);
+        }
+        
     };
 
   // Handle BLE notifications - if no notifications for sound can delete
@@ -35,6 +60,10 @@ export default function SoundModeScreen() {
       if (bytes[0] === 0xA0) {
         console.log("Sound notification:", bytes);
         // handle Speaker state updates here
+        setAttempts(prev => prev + 1);
+        if (bytes[1] === 1) {
+          setHits(prev => prev + 1);
+        }
       }
     });
     return () => bleService.disableNotifications();
