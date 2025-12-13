@@ -39,8 +39,7 @@ export default function LEDModeScreen() {
           const bytes = Buffer.from(data, 'base64');
           const eventCode = bytes[0];
           if (eventCode === 0x87) {
-            const newMotionDetected = bytes[1];
-            setMotionDetected(newMotionDetected);
+            setMotionDetected((prev) => prev + 1);
             console.log("Motion Detected Update:", bytes);
           }
         });
@@ -95,6 +94,7 @@ export default function LEDModeScreen() {
         //await sendFrame([0x04, 0x05, 0x00]); //stop reg
         setGameRunning(true);
         setLedRegRunning(false);
+        setMotionDetected(0);
         startMotionDetection();
     };
 
@@ -120,6 +120,7 @@ export default function LEDModeScreen() {
               user_id: user.id,
               hits: hits,
               attempts: attempts,
+              motion_detected: motionDetected,
               mode: "whack-a-mole"
             },
           ]);
@@ -140,6 +141,7 @@ export default function LEDModeScreen() {
         //await sendFrame([0x04, 0x02, 0x00]); //stop whack
         setGameRunning(false);
         setLedRegRunning(true);
+        setMotionDetected(0);
         startMotionDetection();
     }
 
@@ -162,6 +164,8 @@ export default function LEDModeScreen() {
             {
               user_id: user.id,
               hits: hits,
+              attempts: attempts,
+              motion_detected: motionDetected,
               mode: "led-regular",
             },
           ]);

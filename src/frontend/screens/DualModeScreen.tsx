@@ -4,7 +4,7 @@ import { Picker } from '@react-native-picker/picker';
 import { Buffer } from 'buffer';
 import { bleService } from '../services/BLEService';
 import { bleWristbandService } from '../services/BLEWristBandService';
-
+import { supabase } from "../../backend/app/services/supabase";
 
 export default function DualModeScreen() {
   const [gameRunning, setGameRunning] = useState(false);
@@ -28,8 +28,7 @@ export default function DualModeScreen() {
           const bytes = Buffer.from(data, 'base64');
           const eventCode = bytes[0];
           if (eventCode === 0x87) {
-            const newMotionDetected = bytes[1];
-            setMotionDetected(newMotionDetected);
+            setMotionDetected((prev) => prev + 1);
             console.log("Motion Detected Update:", bytes);
           }
         });
@@ -60,14 +59,39 @@ export default function DualModeScreen() {
     await sendFrame([0x04, 0x08, 0x00]); // example CMD: start whack
     //await sendFrame([0x04, 0x05, 0x00]); //stop reg
       setGameRunning(true);
+      setMotionDetected(0);
       startMotionDetection();
     };
 
-    const stopDualGame = async () => {
-        await sendFrame([0x04, 0x09, 0x00]); // example CMD: stop
-        setGameRunning(false);
-        stopMotionDetection();
-    };
+  const stopDualGame = async () => {
+    await sendFrame([0x04, 0x09, 0x00]); // stop dual mode
+    setGameRunning(false);
+    stopMotionDetection(); // fine to keep running, not stored
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.from("dual_mode").insert([
+        {
+          user_id: user.id,
+          hits,
+          attempts,
+          motion_detected: motionDetected,
+          mode: "dual-mode",
+        },
+      ]);
+
+      if (error) {
+        console.error("Error saving dual mode stats:", error.message);
+      } else {
+        console.log("Dual mode stats saved");
+      }
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
+  };
+
 
   // Handle BLE notifications - if no notifications for sound can delete
   useEffect(() => {

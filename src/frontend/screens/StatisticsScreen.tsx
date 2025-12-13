@@ -17,13 +17,16 @@ type WhackStat = {
   attempts: number;
   mode: string | null;
   created_at: string;
+  motion_detected?: number | null;
 };
 
 type RegLEDStat = {
   id: string;
   hits: number;
+  attempts: number;
   mode: string | null;
   created_at: string;
+  motion_detected?: number | null;
 };
 
 type SoundStat = {
@@ -32,6 +35,16 @@ type SoundStat = {
   attempts: number;
   mode: string | null;
   created_at: string;
+  motion_detected?: number | null;
+};
+
+type DualStat = {
+  id: string;
+  hits: number;
+  attempts: number;
+  mode: string | null;
+  created_at: string;
+  motion_detected?: number | null;
 };
 
 type DateFilter = "all" | "7" | "30";
@@ -40,6 +53,7 @@ export default function StatisticsScreen() {
   const [whackStats, setWhackStats] = useState<WhackStat[]>([]);
   const [regLEDStats, setRegLEDStats] = useState<RegLEDStat[]>([]);
   const [soundStats, setSoundStats] = useState<SoundStat[]>([]);
+  const [dualStats, setDualStats] = useState<DualStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
@@ -56,6 +70,7 @@ export default function StatisticsScreen() {
           { data: whack, error: whackError },
           { data: led, error: ledError },
           { data: sound, error: soundError },
+          { data: dual, error: dualError },
         ] = await Promise.all([
           supabase
             .from("stats")
@@ -69,13 +84,18 @@ export default function StatisticsScreen() {
             .from("sound_stats")
             .select("*")
             .order("created_at", { ascending: false }),
+          supabase 
+            .from("dual_mode")
+            .select("*")
+            .order("created_at", { ascending: false }),
         ]);
 
-        if (whackError || ledError || soundError) {
+        if (whackError || ledError || soundError || dualError) {
           throw (
             whackError ??
             ledError ??
             soundError ??
+            dualError ??
             new Error("Unknown stats error")
           );
         }
@@ -96,6 +116,7 @@ export default function StatisticsScreen() {
         setWhackStats(fixedWhack);
         setRegLEDStats((led || []) as RegLEDStat[]);
         setSoundStats(fixedSound);
+        setDualStats((dual || []) as DualStat[]);
       } catch (e: any) {
         console.error("Error loading stats:", e);
         setError(e.message ?? "Failed to load statistics");
@@ -140,6 +161,10 @@ export default function StatisticsScreen() {
     () => applyDateFilter(soundStats),
     [soundStats, minDate]
   );
+  const filteredDual = useMemo(
+  () => applyDateFilter(dualStats),
+  [dualStats, minDate]
+);
 
   // ───────────────────────────── Summaries ─────────────────────────────
 
@@ -158,10 +183,13 @@ export default function StatisticsScreen() {
   const regLEDSummary = useMemo(() => {
     const sessions = filteredRegLED.length;
     let hits = 0;
+    let attempts = 0;
     filteredRegLED.forEach((s) => {
       hits += s.hits ?? 0;
+      attempts += s.attempts ?? 0;
     });
-    return { sessions, hits };
+    const accuracy = attempts > 0 ? hits / attempts : 0;
+    return { sessions, hits, attempts, accuracy };
   }, [filteredRegLED]);
 
   const soundSummary = useMemo(() => {
@@ -176,6 +204,19 @@ export default function StatisticsScreen() {
     return { sessions, hits, attempts, accuracy };
   }, [filteredSound]);
 
+  const dualSummary = useMemo(() => {
+    const sessions = filteredDual.length;
+    let hits = 0;
+    let attempts = 0;
+
+    filteredDual.forEach((s) => {
+      hits += s.hits ?? 0;
+      attempts += s.attempts ?? 0;
+    });
+
+    const accuracy = attempts > 0 ? hits / attempts : 0;
+    return { sessions, hits, attempts, accuracy };
+  }, [filteredDual]);
   // ───────────────────────────── Rendering ─────────────────────────────
 
   if (loading) {
@@ -240,6 +281,7 @@ export default function StatisticsScreen() {
             created_at={item.created_at}
             hits={item.hits}
             attempts={item.attempts}
+            motion_detected={item.motion_detected}
           />
         )}
       />
@@ -251,7 +293,9 @@ export default function StatisticsScreen() {
           `${regLEDSummary.sessions} session${
             regLEDSummary.sessions === 1 ? "" : "s"
           }`,
-          `Total hits: ${regLEDSummary.hits}`,
+          `Hits: ${regLEDSummary.hits}`,
+          `Attempts: ${regLEDSummary.attempts}`,
+          `Accuracy: ${(regLEDSummary.accuracy * 100).toFixed(1)}%`,
         ]}
         emptyText="No LED Regular stats yet."
         data={filteredRegLED}
@@ -260,7 +304,8 @@ export default function StatisticsScreen() {
             modeLabel="LED Regular"
             created_at={item.created_at}
             hits={item.hits}
-            // no attempts for reg LED
+            attempts={item.attempts}
+            motion_detected={item.motion_detected}
           />
         )}
       />
@@ -284,9 +329,34 @@ export default function StatisticsScreen() {
             created_at={item.created_at}
             hits={item.hits}
             attempts={item.attempts}
+            motion_detected ={item.motion_detected}
           />
         )}
       />
+      {/* Dual Mode Section */}
+      <StatsSection
+        title="Dual Mode"
+        summaryLines={[
+          `${dualSummary.sessions} session${
+            dualSummary.sessions === 1 ? "" : "s"
+          }`,
+          `Hits: ${dualSummary.hits}`,
+          `Attempts: ${dualSummary.attempts}`,
+          `Accuracy: ${(dualSummary.accuracy * 100).toFixed(1)}%`,
+        ]}
+        emptyText="No Dual Mode stats yet."
+        data={filteredDual}
+        renderItem={(item) => (
+          <SessionRow
+            modeLabel="Dual Mode"
+            created_at={item.created_at}
+            hits={item.hits}
+            attempts={item.attempts}
+            motion_detected={item.motion_detected}
+          />
+        )}
+      />
+
     </ScrollView>
   );
 }
@@ -364,6 +434,7 @@ type SessionRowProps = {
   created_at: string;
   hits: number;
   attempts?: number;
+  motion_detected?: number | null;
 };
 
 const SessionRow: React.FC<SessionRowProps> = ({
@@ -371,6 +442,7 @@ const SessionRow: React.FC<SessionRowProps> = ({
   created_at,
   hits,
   attempts,
+  motion_detected, 
 }) => {
   const dateStr = new Date(created_at).toLocaleString();
   const accuracy =
@@ -390,6 +462,9 @@ const SessionRow: React.FC<SessionRowProps> = ({
           {attempts != null ? ` / ${attempts}` : ""}
         </Text>
         {accuracy && <Text style={styles.sessionLine}>{accuracy}</Text>}
+        {motion_detected != null && (
+          <Text style={styles.sessionLine}>Motion: {motion_detected}</Text>
+        )}
       </View>
     </View>
   );

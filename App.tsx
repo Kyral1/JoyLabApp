@@ -9,8 +9,6 @@ import SettingsScreen from "./src/frontend/screens/SettingsScreen";
 import GameModesStack from "./src/frontend/navigation/GameModesStack";
 import StatisticsScreen from "./src/frontend/screens/StatisticsScreen";
 import ProfileScreen from "./src/frontend/screens/ProfileScreen";
-import TestScreen from "./src/frontend/screens/TestScreen";
-import SupabaseTestScreen from "./src/frontend/screens/SupaBaseTestScreen";
 
 import AuthLandingScreen from "./src/frontend/screens/AuthLandingScreen";
 import LoginScreen from "./src/frontend/screens/LogInScreen";
@@ -98,15 +96,12 @@ function MainTabs() {
           ),
         }}
       />
-
-      <Tab.Screen name="Test Screen" component={TestScreen} />
-      <Tab.Screen name="Supabase Test" component={SupabaseTestScreen} />
     </Tab.Navigator>
   );
 }
 
 function RootNavigator() {
-  const user = useAuth(); // comes from AuthContext
+  const { user } = useAuth(); // comes from AuthContext
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

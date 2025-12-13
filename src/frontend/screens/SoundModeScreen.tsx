@@ -29,8 +29,7 @@ export default function SoundModeScreen() {
           const bytes = Buffer.from(data, 'base64');
           const eventCode = bytes[0];
           if (eventCode === 0x87) {
-            const newMotionDetected = bytes[1];
-            setMotionDetected(newMotionDetected);
+            setMotionDetected((prev) => prev +1);
             console.log("Motion Detected Update:", bytes);
           }
         });
@@ -61,6 +60,7 @@ export default function SoundModeScreen() {
     await sendFrame([0x04, 0x06, 0x00]); // example CMD: start whack
     //await sendFrame([0x04, 0x05, 0x00]); //stop reg
       setGameRunning(true);
+      setMotionDetected(0);
       startMotionDetection();
     };
 
@@ -78,6 +78,7 @@ export default function SoundModeScreen() {
               user_id: user.id,
               hits: hits,
               attempts: attempts,
+              motion_detected: motionDetected,
               mode: "sound-mode",
             },
           ]);
